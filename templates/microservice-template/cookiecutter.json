@@ -1,0 +1,5 @@
+{
+  "service_name": "receive_orders",
+  "port": "8001",
+  "description": "Receive orders"
+}
