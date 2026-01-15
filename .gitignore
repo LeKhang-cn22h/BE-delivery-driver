@@ -1,0 +1,115 @@
+# =========================
+# Python
+# =========================
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+.env
+.venv
+venv/
+ENV/
+env/
+pip-wheel-metadata/
+.idea/
+.vscode/
+# =========================
+# Logs
+# =========================
+*.log
+logs/
+*.out
+
+# =========================
+# IDE / Editor
+# =========================
+.vscode/
+.idea/
+*.swp
+*.swo
+*.sublime-project
+*.sublime-workspace
+
+# =========================
+# OS
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# Docker
+# =========================
+**/.docker/
+docker-data/
+**/data/
+**/volumes/
+
+# Ignore container-generated files
+**/postgres/data/
+**/minio/data/
+**/kafka/data/
+**/spark/data/
+**/airflow/logs/
+**/airflow/dags/__pycache__/
+
+# =========================
+# Airflow
+# =========================
+airflow/logs/
+airflow/plugins/__pycache__/
+
+# =========================
+# Spark
+# =========================
+*.jar
+*.class
+spark-warehouse/
+
+# =========================
+# Jupyter / Data Science
+# =========================
+.ipynb_checkpoints/
+*.ipynb
+!data-platform/analytics/notebooks/*.ipynb
+
+# =========================
+# Data Lake / Warehouse local data
+# =========================
+data-platform/lake/bronze/*
+data-platform/lake/silver/*
+data-platform/lake/gold/*
+!data-platform/lake/**/.gitkeep
+
+# =========================
+# Secrets
+# =========================
+.env
+.env.*
+*.key
+*.pem
+secrets/
+credentials.json
+
+# =========================
+# Test / Coverage
+# =========================
+.pytest_cache/
+.coverage
+htmlcov/
+
+# =========================
+# Node (nếu có frontend sau này)
+# =========================
+node_modules/
+
+# =========================
+# Temporary
+# =========================
+tmp/
+temp/
