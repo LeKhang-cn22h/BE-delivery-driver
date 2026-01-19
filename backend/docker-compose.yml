@@ -1,16 +1,109 @@
-version: "3.9"
+version: '3.11'
 
 services:
   gateway:
-    build: ./gateway
+    build:
+      context: ./gateway
+      dockerfile: Dockerfile
+    container_name: gateway
     ports:
       - "8000:8000"
-    env_file:
-      - .env
+    environment:
+      - RECEIVE_ORDERS_SERVICE_URL=http://receive_orders_service:8001
+      - TRANSPORT_SERVICE_URL=http://transport_service:8002
+    volumes:
+      - ./gateway/app:/app
+    networks:
+      - app_network
     depends_on:
-      - transport_service
+      - receive_orders_service
+    restart: unless-stopped
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
-  transport_service:
-    build: ./services/transport_service
+  # RabbitMQ Service
+  rabbitmq:
+    image: rabbitmq:3.12-management-alpine
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"   # AMQP port
+      - "15672:15672" # Management UI
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - app_network
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Service
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - app_network
+
+  # Receive Orders Service
+  receive_orders_service:
+    build:
+      context: ./services/receive_orders/app
+      dockerfile: Dockerfile
+    container_name: receive_orders_service
+    ports:
+      - "8001:8001"
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=guest
+      - RABBITMQ_PASSWORD=guest
+      - RABBITMQ_QUEUE_NAME=order_queue
+      - RABBITMQ_EXCHANGE_NAME=orders_exchange
+      - RABBITMQ_ROUTING_KEY=new.order
+    volumes:
+      - ./services/receive_orders/app:/app
+    networks:
+      - app_network
     env_file:
-      - .env
+      - ./services/receive_orders/app/.env
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    restart: unless-stopped
+networks:
+  app_network:
+    driver: bridge
+
+volumes:
+  rabbitmq_data:
+  redis_data:
+
+  # Transport Service (ví dụ - service gửi order)
+  # transport_service:
+  #   build:
+  #     context: ./transport_service
+
+  #   container_name: transport_service
+  #   ports:
+  #     - "8002:8002"
+  #   environment:
+  #     - RABBITMQ_HOST=rabbitmq
+  #     - RABBITMQ_PORT=5672
+  #     - RABBITMQ_USER=guest
+  #     - RABBITMQ_PASSWORD=guest
+  #   networks:
+  #     - app_network
+  #   depends_on:
+  #     rabbitmq:
+  #       condition: service_healthy

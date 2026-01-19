@@ -1,27 +1,47 @@
-"""
-📌 VAI TRÒ:
-- Là entry point của API Gateway
-- Khởi tạo FastAPI app
-- Đăng ký các router proxy để chuyển tiếp request
-- KHÔNG chứa business logic
-"""
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from dotenv import load_dotenv
 
-# Import router chuyên proxy sang transport_service
-from routers.transport_proxy import router
+# Import routers
+from routers import receive_orders_proxy
 
-# Khởi tạo FastAPI application
+# Load environment variables
+load_dotenv()
+
+# Create FastAPI app
 app = FastAPI(
     title="API Gateway",
-    description="Gateway chuyển tiếp request đến các microservices",
+    description="Gateway cho hệ thống quản lý vận chuyển",
     version="1.0.0"
 )
 
-# Đăng ký router proxy
-# prefix="/transport" → tất cả API transport đi qua:
-# /transport/*
-app.include_router(
-    router,
-    prefix="/transport",
-    tags=["Transport Service"]
+# CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
+
+# Include routers
+app.include_router(receive_orders_proxy.router)
+
+
+
+@app.get("/")
+async def root():
+    return {
+        "service": "API Gateway",
+        "version": "1.0.0",
+        "status": "running",
+        "available_services": {
+            "receive_orders": "/api/v1/orders",
+            "transport": "/api/v1/transport"
+        }
+    }
+
+
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy"}

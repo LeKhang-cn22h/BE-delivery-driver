@@ -13,11 +13,12 @@ build/
 .eggs/
 .env
 .venv
-venv/
+services/receive_orders/app/venv/
 ENV/
 env/
 pip-wheel-metadata/
-
+.idea/
+.vscode/
 # =========================
 # Logs
 # =========================
