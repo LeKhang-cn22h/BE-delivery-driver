@@ -82,17 +82,17 @@ services:
         condition: service_started
     restart: unless-stopped
 
-  kafka_to_datalake:
-    build:
-      context: ./services/kafka_to_datalake/app
-      dockerfile: Dockerfile
-    container_name: kafka_to_datalake
-    depends_on:
-      - kafka
-      - minio
-    networks:
-      - app_network
-    restart: unless-stopped
+#  kafka_to_datalake:
+#    build:
+#      context: ./services/kafka_to_datalake/app
+#      dockerfile: Dockerfile
+#    container_name: kafka_to_datalake
+#    depends_on:
+#      - kafka
+#      - minio
+#    networks:
+#      - app_network
+#    restart: unless-stopped
 
 
   zookeeper:
