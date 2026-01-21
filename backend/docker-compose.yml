@@ -126,6 +126,24 @@ services:
 #    networks:
 #      - app_network
 #    restart: unless-stopped
+  kafka_to_datalake:
+    build:
+      context: ./services/kafka_to_datalake/app
+      dockerfile: Dockerfile
+    container_name: kafka_to_datalake
+    depends_on:
+      - kafka
+      - minio
+    networks:
+      - app_network
+    restart: unless-stopped
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9093
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_ACCESS_KEY=admin
+      - MINIO_SECRET_KEY=admin123
+      - MINIO_BUCKET=datalake
+
 
 
   zookeeper:
@@ -194,6 +212,102 @@ services:
     command: server /data --console-address ":9001"
     networks:
       - app_network
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/live" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+
+    # PostgreSQL Data Warehouse
+  postgres_warehouse:
+    image: postgres:15-alpine
+    container_name: postgres_warehouse
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_DB: warehouse
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin123
+      POSTGRES_INITDB_ARGS: "-E UTF8"
+    volumes:
+      - postgres_warehouse_data:/var/lib/postgresql/data
+    networks:
+      - app_network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U admin -d warehouse" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+    # ========== ETL PIPELINE ==========
+
+    # ETL Processor: DataLake (MinIO) -> Data Warehouse (PostgreSQL)
+  etl_processor:
+    build:
+      context: ./services/etl_processor/app
+      dockerfile: Dockerfile
+    container_name: etl_processor
+    depends_on:
+      postgres_warehouse:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    networks:
+      - app_network
+    restart: unless-stopped
+    environment:
+      # MinIO (Source)
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_ACCESS_KEY=admin
+      - MINIO_SECRET_KEY=admin123
+      - MINIO_BUCKET=datalake
+      # PostgreSQL (Target)
+      - POSTGRES_HOST=postgres_warehouse
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=warehouse
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=admin123
+      # Processing Config
+      - PROCESSING_INTERVAL=300
+      - LOG_LEVEL=INFO
+
+    # ========== BUSINESS INTELLIGENCE ==========
+  postgres_metabase:
+    image: postgres:15-alpine
+    container_name: postgres_metabase
+    environment:
+      POSTGRES_DB: metabase
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin123
+    volumes:
+      - postgres_metabase_data:/var/lib/postgresql/data
+    networks:
+      - app_network
+
+    # Metabase (BI Tool)
+  metabase:
+    image: metabase/metabase:latest
+    container_name: metabase
+    ports:
+      - "3000:3000"
+    environment:
+      MB_DB_TYPE: postgres
+      MB_DB_DBNAME: metabase
+      MB_DB_PORT: 5432
+      MB_DB_USER: admin
+      MB_DB_PASS: admin123
+      MB_DB_HOST: postgres_metabase
+    depends_on:
+      postgres_metabase:
+        condition: service_healthy
+    volumes:
+      - metabase_data:/metabase-data
+    networks:
+      - app_network
+    restart: unless-stopped
+
 
 networks:
   app_network:
@@ -206,3 +320,6 @@ volumes:
   zookeeper_data:
   zookeeper_logs:
   minio_data:
+  postgres_warehouse_data:
+  postgres_metabase_data:
+  metabase_data:

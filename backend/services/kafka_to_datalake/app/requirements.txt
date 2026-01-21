@@ -1,2 +1,2 @@
 kafka-python
-boto3
+minio
