@@ -24,6 +24,7 @@ class User:
     full_name: Optional[str] = None
     phone: Optional[str] = None
     avatar_url: Optional[str] = None
+    role: str = "customer"
     created_at: Optional[datetime] = None
     
     def get_display_name(self) -> str:

@@ -208,7 +208,26 @@ async def reset_password(
     Gửi email hướng dẫn đặt lại mật khẩu
     """
     return await auth_service.reset_password_request(data.email)
-
+@router.get("/verify", summary="Verify token (internal)")
+async def verify_token(
+    token: str = Depends(get_token_from_header),
+    auth_service: AuthService = Depends(get_auth_service)
+):
+    """
+    Internal endpoint - Called by Gateway
+    Verify token validity and return user info
+    """
+    try:
+        user = await auth_service.get_current_user(token)
+        return {
+            "user_id": user.id,
+            "email": user.email,
+            "full_name": user.full_name,
+            "role": getattr(user, 'role', 'user'),
+            "phone": user.phone
+        }
+    except HTTPException:
+        raise
 
 @router.get("/health", summary="Health check")
 async def health_check():
