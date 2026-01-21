@@ -17,10 +17,8 @@ services:
     networks:
       - app_network
     depends_on:
-      receive_orders_service:
-        condition: service_started
-      auth_service:
-        condition: service_healthy
+      - receive_orders_service
+      - auth_service
     restart: unless-stopped
     command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
@@ -86,12 +84,9 @@ services:
     env_file:
       - ./services/receive_orders/app/.env
     depends_on:
-      rabbitmq:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      kafka:
-        condition: service_healthy
+      - rabbitmq
+      - redis
+      - kafka
     restart: unless-stopped
 
   auth_service:
@@ -114,18 +109,7 @@ services:
       timeout: 5s
       retries: 5
       start_period: 30s
-  # Zookeeper
-#  kafka_to_datalake:
-#    build:
-#      context: ./services/kafka_to_datalake/app
-#      dockerfile: Dockerfile
-#    container_name: kafka_to_datalake
-#    depends_on:
-#      - kafka
-#      - minio
-#    networks:
-#      - app_network
-#    restart: unless-stopped
+
   kafka_to_datalake:
     build:
       context: ./services/kafka_to_datalake/app
@@ -189,8 +173,7 @@ services:
     networks:
       - app_network
     depends_on:
-      zookeeper:
-        condition: service_healthy
+      - zookeeper
     healthcheck:
       test: kafka-broker-api-versions --bootstrap-server localhost:9092
       interval: 10s
@@ -217,7 +200,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-
 
     # PostgreSQL Data Warehouse
   postgres_warehouse:
@@ -250,10 +232,10 @@ services:
       dockerfile: Dockerfile
     container_name: etl_processor
     depends_on:
-      postgres_warehouse:
-        condition: service_healthy
-      minio:
-        condition: service_healthy
+      - postgres_warehouse
+#        condition: service_healthy
+      - minio
+#        condition: service_healthy
     networks:
       - app_network
     restart: unless-stopped
@@ -300,8 +282,8 @@ services:
       MB_DB_PASS: admin123
       MB_DB_HOST: postgres_metabase
     depends_on:
-      postgres_metabase:
-        condition: service_healthy
+      - postgres_metabase
+#        condition: service_healthy
     volumes:
       - metabase_data:/metabase-data
     networks:
