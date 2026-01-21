@@ -29,6 +29,8 @@ class HTTPClient:
         default_headers = {"Content-Type": "application/json"}
         if headers:
             default_headers.update(headers)
+        default_headers = self._sanitize_headers(default_headers)
+
         
         try:
             async with httpx.AsyncClient(timeout=self.timeout) as client:
@@ -84,3 +86,24 @@ class HTTPClient:
     
     async def delete(self, endpoint: str) -> Dict:
         return await self.request("DELETE", endpoint)
+    
+    def _sanitize_headers(self, headers: Dict[str, Any]) -> Dict[str, str]:
+        safe_headers = {}
+        for k, v in headers.items():
+            if v is None:
+                continue
+
+            if not isinstance(v, str):
+                v = str(v)
+
+            try:
+                v.encode("ascii")  # test ASCII
+            except UnicodeEncodeError:
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Invalid header value (non-ASCII) for key: {k}"
+                )
+
+            safe_headers[k] = v
+
+        return safe_headers

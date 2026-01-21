@@ -1,5 +1,16 @@
+# ===== Core Framework =====
+fastapi                    # FastAPI framework
+uvicorn[standard]           # ASGI server với websocket support
+python-dotenv                # Load environment variables
 
-fastapi
-uvicorn[standard]
-httpx
-python-dotenv
+# ===== HTTP Client =====
+httpx                       # Async HTTP client cho proxy requests
+
+# ===== Data Validation =====
+pydantic                     # Data validation (đi kèm FastAPI)
+pydantic-settings            # Settings management với pydantic
+email-validator              # Validate email trong pydantic
+
+
+# ===== Logging & Monitoring =====
+python-json-logger          # Structured JSON logging (optional)

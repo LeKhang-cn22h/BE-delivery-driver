@@ -26,6 +26,7 @@ class AuthRepositoryInterface(ABC):
         email: str,
         password: str,
         full_name: str,
+        role: str = "customer",
         phone: Optional[str] = None
     ) -> AuthResult:
         """

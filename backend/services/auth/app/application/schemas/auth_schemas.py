@@ -1,7 +1,3 @@
-# ============================================
-# application/schemas/auth_schemas.py
-# ============================================
-#
 # Pydantic schemas cho API
 # - Request validation
 # - Response serialization
