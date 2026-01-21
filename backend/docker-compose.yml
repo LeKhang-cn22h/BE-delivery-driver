@@ -64,8 +64,8 @@ services:
       context: ./services/receive_orders/app
       dockerfile: Dockerfile
     container_name: receive_orders_service
-    ports:
-      - "8001:8001"
+    expose:
+      - "8001"
     environment:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
@@ -97,8 +97,8 @@ services:
       context: ./services/auth/app
       dockerfile: Dockerfile
     container_name: auth_service
-    ports:
-      - "7000:7000"
+    expose:
+      - "7000"
     volumes:
       - ./services/auth/app:/app
     networks:
