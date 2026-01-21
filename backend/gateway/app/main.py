@@ -1,6 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
+from routers import auth_proxy
+
 
 # Import routers
 from routers import receive_orders_proxy
@@ -26,6 +28,7 @@ app.add_middleware(
 
 # Include routers
 app.include_router(receive_orders_proxy.router)
+app.include_router(auth_proxy.router)
 
 
 
@@ -37,7 +40,8 @@ async def root():
         "status": "running",
         "available_services": {
             "receive_orders": "/api/v1/orders",
-            "transport": "/api/v1/transport"
+            "transport": "/api/v1/transport",
+            "auth":"/api/v1/auth"
         }
     }
 

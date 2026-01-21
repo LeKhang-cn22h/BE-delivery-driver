@@ -3,7 +3,7 @@ version: '3.11'
 services:
   gateway:
     build:
-      context: ./gateway
+      context: ./gateway/app
       dockerfile: Dockerfile
     container_name: gateway
     ports:
@@ -11,22 +11,26 @@ services:
     environment:
       - RECEIVE_ORDERS_SERVICE_URL=http://receive_orders_service:8001
       - TRANSPORT_SERVICE_URL=http://transport_service:8002
+      - AUTH_SERVICE_URL=http://auth_service:7000
     volumes:
       - ./gateway/app:/app
     networks:
       - app_network
     depends_on:
-      - receive_orders_service
+      receive_orders_service:
+        condition: service_started
+      auth_service:
+        condition: service_healthy
     restart: unless-stopped
     command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
   # RabbitMQ Service
   rabbitmq:
-    image: rabbitmq:3.12-management-alpine
+    image: rabbitmq:4.0-management-alpine
     container_name: rabbitmq
     ports:
-      - "5672:5672"   # AMQP port
-      - "15672:15672" # Management UI
+      - "5672:5672"
+      - "15672:15672"
     environment:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
@@ -50,6 +54,11 @@ services:
       - redis_data:/data
     networks:
       - app_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   # Receive Orders Service
   receive_orders_service:
@@ -69,6 +78,7 @@ services:
       - RABBITMQ_QUEUE_NAME=order_queue
       - RABBITMQ_EXCHANGE_NAME=orders_exchange
       - RABBITMQ_ROUTING_KEY=new.order
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9093
     volumes:
       - ./services/receive_orders/app:/app
     networks:
@@ -79,9 +89,32 @@ services:
       rabbitmq:
         condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
     restart: unless-stopped
 
+  auth_service:
+    build:
+      context: ./services/auth/app
+      dockerfile: Dockerfile
+    container_name: auth_service
+    ports:
+      - "7000:7000"
+    volumes:
+      - ./services/auth/app:/app
+    networks:
+      - app_network
+    env_file:
+      - ./services/auth/app/.env
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+  # Zookeeper
 #  kafka_to_datalake:
 #    build:
 #      context: ./services/kafka_to_datalake/app
@@ -108,25 +141,27 @@ services:
       - zookeeper_logs:/var/lib/zookeeper/log
     networks:
       - app_network
+    healthcheck:
+      test: ["CMD-SHELL", "echo srvr | nc localhost 2181 || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
 
+  # Kafka
   kafka:
     image: confluentinc/cp-kafka:7.5.0
     container_name: kafka
-    depends_on:
-      - zookeeper
     ports:
       - "9092:9092"
       - "9093:9093"
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-
-      # Listener cho container và cho máy host
       KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,PLAINTEXT_INTERNAL://0.0.0.0:9093
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://kafka:9093
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT_INTERNAL
-
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
@@ -135,7 +170,16 @@ services:
       - kafka_data:/var/lib/kafka/data
     networks:
       - app_network
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    healthcheck:
+      test: kafka-broker-api-versions --bootstrap-server localhost:9092
+      interval: 10s
+      timeout: 10s
+      retries: 5
 
+  # MinIO
   minio:
     image: minio/minio:latest
     container_name: minio
@@ -151,7 +195,6 @@ services:
     networks:
       - app_network
 
-
 networks:
   app_network:
     driver: bridge
@@ -163,22 +206,3 @@ volumes:
   zookeeper_data:
   zookeeper_logs:
   minio_data:
-
-  # Transport Service (ví dụ - service gửi order)
-  # transport_service:
-  #   build:
-  #     context: ./transport_service
-
-  #   container_name: transport_service
-  #   ports:
-  #     - "8002:8002"
-  #   environment:
-  #     - RABBITMQ_HOST=rabbitmq
-  #     - RABBITMQ_PORT=5672
-  #     - RABBITMQ_USER=guest
-  #     - RABBITMQ_PASSWORD=guest
-  #   networks:
-  #     - app_network
-  #   depends_on:
-  #     rabbitmq:
-  #       condition: service_healthy

@@ -13,6 +13,9 @@ build/
 .eggs/
 .env
 .venv
+venv/
+.venv/
+venv
 backend/services/receive_orders/app/venv/
 ENV/
 env/
