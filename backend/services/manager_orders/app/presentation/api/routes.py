@@ -23,17 +23,17 @@ class CancelOrderRequest(BaseModel):
 
 
 @router.post("/create")
-def create_order(data: CreateOrderRequest):
+async def create_order(data: CreateOrderRequest):
     try:
-        return CreateOrderUseCase().execute(data)
+        return await CreateOrderUseCase().execute(data)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.put("/update-status")
-def update_status(data: UpdateStatusRequest):
+async def update_status(data: UpdateStatusRequest):
     try:
-        return UpdateOrderStatusUseCase().execute(
+        return await UpdateOrderStatusUseCase().execute(
             data.order_id, data.status
         )
     except Exception as e:
@@ -41,8 +41,8 @@ def update_status(data: UpdateStatusRequest):
 
 
 @router.post("/cancel")
-def cancel_order(data: CancelOrderRequest):
+async def cancel_order(data: CancelOrderRequest):
     try:
-        return CancelOrderUseCase().execute(data.order_id)
+        return await CancelOrderUseCase().execute(data.order_id)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

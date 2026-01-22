@@ -43,4 +43,10 @@ app.include_router(router)
 
 @app.get("/")
 def root():
-    return {"service": "manager_orders", "status": "running"}
+        return {"service": "manager_orders", "status": "running"}
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8001)
+
