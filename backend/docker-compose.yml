@@ -1,5 +1,3 @@
-version: '3.11'
-
 services:
   gateway:
     build:
@@ -109,7 +107,26 @@ services:
       timeout: 5s
       retries: 5
       start_period: 30s
-
+  routing_service:
+      build:
+        context: ./services/routing-service/app
+        dockerfile: Dockerfile
+      container_name: routing_service
+      expose:
+        - "8386"
+      volumes:
+        - ./services/routing-service/app:/app
+      networks:
+        - app_network
+      env_file:
+        - ./services/routing-service/app/.env
+      restart: unless-stopped
+      healthcheck:
+        test: ["CMD", "curl", "-f", "http://localhost:8386/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
   kafka_to_datalake:
     build:
       context: ./services/kafka_to_datalake/app

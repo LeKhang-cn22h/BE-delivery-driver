@@ -19,7 +19,7 @@ sys.stderr.reconfigure(encoding="utf-8")
 from middleware.auth_middleware import AuthMiddleware, RoleCheckMiddleware
 
 # Import routers
-from routers import auth_proxy, receive_orders_proxy
+from routers import auth_proxy, receive_orders_proxy, routing_proxy
 
 # Configure logging
 logging.basicConfig(
@@ -115,6 +115,12 @@ app.include_router(
     receive_orders_proxy.router,
     tags=[" Orders Management"]
 )
+
+app.include_router(
+    routing_proxy.router,
+    tags=[" Routing Service"]
+)
+
 
 # TODO: Thêm router khác
 # from routers import transport_proxy
