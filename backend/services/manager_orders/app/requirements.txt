@@ -1,6 +1,18 @@
+# FastAPI và Web Framework
 fastapi
-uvicorn
+uvicorn[standard]
+python-multipart
+
+# Pydantic cho validation
+pydantic
+pydantic-settings
+
+# Supabase Client
 supabase
+postgrest
+
+# Environment variables
 python-dotenv
-sqlalchemy
-aio-pika
+
+# Async support
+httpx

@@ -7,7 +7,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/v1/orders", tags=["Receive Orders"])
+router = APIRouter(prefix="/api/v1/order", tags=["Receive Orders"])
 
 # Khởi tạo HTTP client cho receive_orders_service
 RECEIVE_ORDERS_SERVICE_URL = os.getenv(
@@ -79,7 +79,7 @@ async def create_order(request: Request):
 
     return await receive_orders_client.request(
         "POST",
-        "/api/v1/orders/",
+        "/api/v1/order/",
         json_data=body,
         headers=headers
     )

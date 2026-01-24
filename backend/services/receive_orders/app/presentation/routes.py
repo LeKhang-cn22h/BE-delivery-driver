@@ -1,4 +1,4 @@
-# app/presentation/routes.py
+
 
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
@@ -7,7 +7,7 @@ from application.services.order_service import OrderService
 
 from infrastructure.messaging.kafka_producer import send_event
 
-router = APIRouter(prefix="/api/v1/orders", tags=["Orders"])
+router = APIRouter(prefix="/api/v1/order", tags=["Orders"])
 
 
 class OrderCreateRequest(BaseModel):
