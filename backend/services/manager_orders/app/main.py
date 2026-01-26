@@ -1,52 +1,52 @@
-import asyncio
-import logging
+# main.py
 from fastapi import FastAPI
-from contextlib import asynccontextmanager
-from dotenv import load_dotenv
-
-from presentation.api.routes import router
-from infrastructure.database.rabbitmq_client import RabbitMQClient
-
-load_dotenv()
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-rabbitmq_client = RabbitMQClient()
-
-
-async def start_consuming():
-    try:
-        await rabbitmq_client.connect()
-        await rabbitmq_client.consume()
-    except Exception as e:
-        logger.error(e)
-
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    logger.info("🚀 Manager Orders Service starting...")
-    task = asyncio.create_task(start_consuming())
-    yield
-    task.cancel()
-    await rabbitmq_client.disconnect()
-
+from fastapi.middleware.cors import CORSMiddleware
+from presentation.api.order_routes import router as order_router
+import uvicorn
+import os
 
 app = FastAPI(
-    title="Manager Orders Service",
+    title="Order Management Microservice",
+    description="Microservice quản lý đơn hàng - Khách hàng đặt hàng với nhiều kiện",
     version="1.0.0",
-    lifespan=lifespan
+    docs_url="/docs",
+    redoc_url="/redoc"
 )
 
-app.include_router(router)
+# CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Trong production nên chỉ định cụ thể
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
+# Include routers
+app.include_router(order_router)
 
 @app.get("/")
-def root():
-        return {"service": "manager_orders", "status": "running"}
+async def root():
+    return {
+        "service": "Order Management Microservice",
+        "status": "running",
+        "version": "1.0.0",
+        "description": "Quản lý đơn hàng - 1 đơn nhiều kiện"
+    }
 
+@app.get("/health")
+async def health_check():
+    return {
+        "status": "healthy",
+        "service": "order-management"
+    }
 
 if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8001)
+    port = int(os.getenv("PORT", 8002))
+    uvicorn.run(
+        "main:app",
+        host="0.0.0.0",
+        port=port,
+        reload=True  # Tắt trong production
+    )
 

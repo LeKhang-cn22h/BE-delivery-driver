@@ -19,7 +19,11 @@ sys.stderr.reconfigure(encoding="utf-8")
 from middleware.auth_middleware import AuthMiddleware, RoleCheckMiddleware
 
 # Import routers
+<<<<<<< HEAD
 from routers import auth_proxy, receive_orders_proxy, routing_proxy
+=======
+from routers import auth_proxy, receive_orders_proxy, orders_proxy
+>>>>>>> 7a33ab8d9ec27a1741b5c9823db70cff89cb5c6c
 
 # Configure logging
 logging.basicConfig(
@@ -98,12 +102,6 @@ ROLE_REQUIREMENTS = {
     "/api/v1/orders/*/pickup": ["driver"],
     "/api/v1/orders/*/deliver": ["driver"],
 }
-
-# Uncomment dòng dưới để enable role check
-# app.add_middleware(RoleCheckMiddleware, role_requirements=ROLE_REQUIREMENTS)
-
-# ===== INCLUDE ROUTERS =====
-
 # Auth router - Public + Protected endpoints
 app.include_router(
     auth_proxy.router,
@@ -115,6 +113,7 @@ app.include_router(
     receive_orders_proxy.router,
     tags=[" Orders Management"]
 )
+<<<<<<< HEAD
 
 app.include_router(
     routing_proxy.router,
@@ -130,6 +129,14 @@ app.include_router(
 # )
 
 # ===== ROOT ENDPOINTS =====
+=======
+# Orders router - Protected endpoints
+# Orders domain service (port 8002)
+app.include_router(
+    orders_proxy.router,
+    tags=[" Orders Domain Service"]
+)
+>>>>>>> 7a33ab8d9ec27a1741b5c9823db70cff89cb5c6c
 
 @app.get("/", tags=["System"])
 async def root():
@@ -198,10 +205,6 @@ async def root():
 
 @app.get("/health", tags=["System"])
 async def health_check():
-    """
-    Health check endpoint
-    Check status của Gateway và các backend services
-    """
     import httpx
     
     services_status = {}
@@ -255,8 +258,6 @@ async def health_check():
         content=gateway_status,
         status_code=status_code
     )
-
-
 # ===== REQUEST/RESPONSE LOGGING MIDDLEWARE =====
 
 @app.middleware("http")
@@ -384,17 +385,11 @@ async def bad_gateway_handler(request: Request, exc):
             "check": "/health for service status"
         }
     )
-
-
 # ===== ADMIN ENDPOINTS (Optional) =====
 
 @app.get("/metrics", tags=["Admin"], include_in_schema=False)
 async def metrics():
-    """
-    Metrics endpoint cho monitoring
-    Hidden from public docs
-    """
-    # TODO: Implement proper metrics
+
     return {
         "requests_total": 0,
         "requests_per_service": {},

@@ -8,8 +8,8 @@ services:
       - "8000:8000"
     environment:
       - RECEIVE_ORDERS_SERVICE_URL=http://receive_orders_service:8001
-      - TRANSPORT_SERVICE_URL=http://transport_service:8002
       - AUTH_SERVICE_URL=http://auth_service:7000
+      - ORDERS_SERVICE_URL=http://order-service:8002
     volumes:
       - ./gateway/app:/app
     networks:
@@ -17,6 +17,7 @@ services:
     depends_on:
       - receive_orders_service
       - auth_service
+      - order-service
     restart: unless-stopped
     command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
@@ -306,6 +307,36 @@ services:
     networks:
       - app_network
     restart: unless-stopped
+
+  order-service:
+    build:
+      context: ./services/manager_orders/app
+      dockerfile: Dockerfile
+    container_name: order-management-service
+
+    ports:
+      - "8002:8002"
+
+    env_file:
+      - ./services/manager_orders/app/.env
+
+    environment:
+      - ENVIRONMENT=production
+
+    volumes:
+      - ./app:/app/app
+
+    restart: unless-stopped
+
+    networks:
+      - app_network
+
+    healthcheck:
+      test: [ "CMD", "python", "-c", "import requests; requests.get('http://localhost:8002/health')" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
 
 
 networks:
