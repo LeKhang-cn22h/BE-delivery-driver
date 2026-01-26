@@ -19,11 +19,7 @@ sys.stderr.reconfigure(encoding="utf-8")
 from middleware.auth_middleware import AuthMiddleware, RoleCheckMiddleware
 
 # Import routers
-<<<<<<< HEAD
-from routers import auth_proxy, receive_orders_proxy, routing_proxy
-=======
-from routers import auth_proxy, receive_orders_proxy, orders_proxy
->>>>>>> 7a33ab8d9ec27a1741b5c9823db70cff89cb5c6c
+from routers import auth_proxy, receive_orders_proxy, routing_proxy, orders_proxy
 
 # Configure logging
 logging.basicConfig(
@@ -113,8 +109,10 @@ app.include_router(
     receive_orders_proxy.router,
     tags=[" Orders Management"]
 )
-<<<<<<< HEAD
-
+app.include_router(
+    orders_proxy.routerP,
+    tags=[" Post Offices"]
+)
 app.include_router(
     routing_proxy.router,
     tags=[" Routing Service"]
@@ -129,14 +127,12 @@ app.include_router(
 # )
 
 # ===== ROOT ENDPOINTS =====
-=======
 # Orders router - Protected endpoints
 # Orders domain service (port 8002)
 app.include_router(
     orders_proxy.router,
     tags=[" Orders Domain Service"]
 )
->>>>>>> 7a33ab8d9ec27a1741b5c9823db70cff89cb5c6c
 
 @app.get("/", tags=["System"])
 async def root():

@@ -75,6 +75,7 @@ class UserResponse(BaseModel):
     phone: Optional[str] = None
     avatar_url: Optional[str] = None
     created_at: Optional[datetime] = None
+    role: Optional[str] = None
     
     class Config:
         from_attributes = True  # Cho phép convert từ Entity

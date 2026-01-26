@@ -1,7 +1,9 @@
-# app/infrastructure/database/supabase_client.py
 from supabase import create_client, Client
 from typing import Optional
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 class SupabaseClient:
@@ -10,7 +12,8 @@ class SupabaseClient:
     @classmethod
     def get_client(cls) -> Client:
         if cls._instance is None:
-            url = os.getenv("SUPABASE_URL")
-            key = os.getenv("SUPABASE_KEY")
-            cls._instance = create_client(url, key)
+            cls._instance = create_client(
+                os.getenv("SUPABASE_URL"),
+                os.getenv("SUPABASE_SERVICE_ROLE_KEY")  
+            )
         return cls._instance
