@@ -65,7 +65,7 @@ class OrderDetailCreateDTO(BaseModel):
 class OrderCreateDTO(BaseModel):
     """DTO tạo đơn hàng mới"""
     user_id: str = Field(..., min_length=1, description="ID khách hàng")
-
+    post_office_id: str = Field(..., description="ID bưu cục xử lý đơn hàng")
     # Thông tin lấy hàng
     pickup_point: str = Field(..., min_length=1, description="Địa chỉ lấy hàng")
     pickup_address: str = Field(..., min_length=1, description="Chi tiết địa chỉ lấy")
@@ -112,7 +112,7 @@ class OrderResponseDTO(BaseModel):
     """Response đơn hàng đầy đủ"""
     id: str
     user_id: str
-
+    post_office_id: str
     # Thông tin lấy hàng
     pickup_point: str
     pickup_address: str

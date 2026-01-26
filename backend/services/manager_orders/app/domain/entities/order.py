@@ -61,8 +61,8 @@ class Order:
     """
     id: Optional[str]
     user_id: str  # ID khách hàng đặt hàng
-
-    # Thông tin điểm lấy hàng (từ khách hàng)
+    post_office_id: str
+    # Thông tin điểm    lấy hàng (từ khách hàng)
     pickup_point: str  # Địa chỉ lấy hàng
     pickup_address: str  # Chi tiết địa chỉ lấy
     pickup_area_code: str  # Mã khu vực lấy hàng
@@ -85,6 +85,8 @@ class Order:
     def validate(self):
         if not self.user_id:
             raise ValueError("User ID là bắt buộc")
+        if not self.post_office_id:
+            raise ValueError("Bưu cục là bắt buộc")
         if not self.pickup_point:
             raise ValueError("Điểm lấy hàng là bắt buộc")
         if not self.pickup_address:
