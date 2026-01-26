@@ -4,30 +4,27 @@ from datetime import datetime
 from typing import Optional, List
 from enum import Enum
 
-
-class OrderStatus(Enum):
-    PENDING = "pending"  # Chờ xử lý
-    CONFIRMED = "confirmed"  # Đã xác nhận
-    PICKING_UP = "picking_up"  # Đang đến lấy hàng
-    PICKED_UP = "picked_up"  # Đã lấy hàng
-    IN_TRANSIT = "in_transit"  # Đang vận chuyển
-    DELIVERING = "delivering"  # Đang giao hàng
-    COMPLETED = "completed"  # Hoàn thành
-    CANCELLED = "cancelled"  # Đã hủy
+class OrderStatus(str, Enum):
+    pending = "pending"
+    confirmed = "confirmed"
+    processing = "processing"
+    completed = "completed"
+    cancelled = "cancelled"
 
 
-class OrderType(Enum):
-    DROP_OFF = "drop_off"
-    PICKUP = "pickup"
+class OrderType(str, Enum):
+    drop_off = "drop_off"
+    pickup = "pickup"
 
 
-class DetailStatus(Enum):
-    PENDING = "pending"  # Chờ giao
-    DELIVERING = "delivering"  # Đang giao
-    DELIVERED = "delivered"  # Đã giao
-    FAILED = "failed"  # Giao thất bại
-    RETURNED = "returned"  # Hoàn trả
-
+class DetailStatus(str, Enum):
+    pending = "pending"
+    confirmed = "confirmed"
+    picking = "picking"
+    picked_up = "picked_up"
+    delivering = "delivering"
+    completed = "completed"
+    cancelled = "cancelled"
 
 @dataclass
 class OrderDetail:
@@ -109,21 +106,17 @@ class Order:
         """Tổng số kiện hàng"""
         return len(self.order_details)
 
-    def get_delivered_packages(self) -> int:
-        """Số kiện đã giao thành công"""
-        return sum(1 for d in self.order_details if d.status == DetailStatus.DELIVERED)
+    def get_delivered_packages(self):
+        return sum(1 for d in self.order_details if d.status == DetailStatus.completed)
 
-    def get_failed_packages(self) -> int:
-        """Số kiện giao thất bại"""
-        return sum(1 for d in self.order_details if d.status == DetailStatus.FAILED)
+    def get_failed_packages(self):
+        return sum(1 for d in self.order_details if d.status == DetailStatus.cancelled)
 
     def is_all_delivered(self) -> bool:
-        """Kiểm tra đã giao hết tất cả kiện chưa"""
-        return all(d.status == DetailStatus.DELIVERED for d in self.order_details)
+        return all(d.status == DetailStatus.completed for d in self.order_details)
 
     def can_cancel(self) -> bool:
-        """Kiểm tra có thể hủy đơn không"""
-        return self.status in [OrderStatus.PENDING, OrderStatus.CONFIRMED]
+        return self.status in [OrderStatus.pending, OrderStatus.confirmed]
 
     def get_unique_delivery_areas(self) -> List[str]:
         """Lấy danh sách khu vực giao hàng (không trùng)"""

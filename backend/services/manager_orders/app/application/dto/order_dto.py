@@ -2,6 +2,24 @@
 from pydantic import BaseModel, Field, field_validator
 from typing import List, Optional
 from datetime import datetime
+from enum import Enum
+
+class OrderDetailStatus(str, Enum):
+    pending = "pending"
+    confirmed = "confirmed"
+    picking = "picking"
+    picked_up = "picked_up"
+    delivering = "delivering"
+    completed = "completed"
+    cancelled = "cancelled"
+
+class OrderStatus(str, Enum):
+    pending = "pending"
+    confirmed = "confirmed"
+    processing = "processing"
+    completed = "completed"
+    cancelled = "cancelled"
+
 class GeoPointDTO(BaseModel):
     lat: float
     lng: float
@@ -86,7 +104,7 @@ class OrderDetailResponseDTO(BaseModel):
     address_detail: str
     area_code: str
     price: float
-    status: str
+    status: OrderDetailStatus
     priority_score: int
 
 
@@ -103,7 +121,7 @@ class OrderResponseDTO(BaseModel):
     pickup_note: Optional[str]
 
     # Trạng thái
-    status: str
+    status: OrderStatus
     order_type: str
     created_at: datetime
 
@@ -124,7 +142,7 @@ class OrderSummaryDTO(BaseModel):
     """Response tóm tắt đơn hàng (dùng cho list)"""
     id: str
     pickup_point: str
-    status: str
+    status: OrderStatus
     created_at: datetime
     total_packages: int
     total_price: float

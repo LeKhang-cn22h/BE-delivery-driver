@@ -27,11 +27,11 @@ class CreateOrderUseCase:
         order.validate()
 
         # Set trạng thái ban đầu
-        order.status = OrderStatus.PENDING
+        order.status = OrderStatus.pending
 
         # Set trạng thái cho từng kiện hàng
         for detail in order.order_details:
-            detail.status = DetailStatus.PENDING
+            detail.status = DetailStatus.pending
 
         # Tạo order trước
         created_order = await self.order_repository.create(order)
