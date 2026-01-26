@@ -29,9 +29,9 @@ def get_order_processing_service() -> OrderProcessingService:
     """Tạo OrderProcessingService với dependencies"""
     db_client = Database.get_client()
 
-    order_repo = OrderRepository(db_client)
-    schedule_repo = ScheduleRepository(db_client)
-    schedule_item_repo = ScheduleItemRepository(db_client)
+    order_repo = OrderRepository(db_client,schema="delivery")
+    schedule_repo = ScheduleRepository(db_client,schema="delivery")
+    schedule_item_repo = ScheduleItemRepository(db_client,schema="delivery")
 
     return OrderProcessingService(
         order_repo=order_repo,

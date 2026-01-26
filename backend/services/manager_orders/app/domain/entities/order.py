@@ -118,7 +118,7 @@ class Order:
         return all(d.status == DetailStatus.completed for d in self.order_details)
 
     def can_cancel(self) -> bool:
-        return self.status in [OrderStatus.pending, OrderStatus.confirmed]
+        return self.status in [OrderStatus.pending]
 
     def get_unique_delivery_areas(self) -> List[str]:
         """Lấy danh sách khu vực giao hàng (không trùng)"""
