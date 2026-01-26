@@ -184,13 +184,22 @@ async def create_post_office(request: Request):
     )
 
 
-@routerP.patch("/{post_office_id}/status", summary="Cập nhật trạng thái bưu cục")
-async def update_post_office_status(post_office_id: UUID, status: str = Query(...)):
+@routerP.patch("/{post_office_id}/status/activate", summary="Cập nhật activate trạng thái bưu cục")
+async def update_post_office_ac(post_office_id: UUID):
     try:
         return await orders_client.request(
             "PATCH",
-            f"/api/v1/post_offices/{post_office_id}/status",
-            params={"status": status}
+            f"/api/v1/post_offices/{post_office_id}/status/activate",
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+@routerP.patch("/{post_office_id}/status/deactivate", summary="Cập nhật trạng thái deactivate bưu cục")
+async def update_post_office_status(post_office_id: UUID):
+    try:
+        return await orders_client.request(
+            "PATCH",
+            f"/api/v1/post_offices/{post_office_id}/status/deactivate",
         )
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))

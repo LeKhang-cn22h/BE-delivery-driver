@@ -1,8 +1,7 @@
 from pydantic import BaseModel
-from typing import List, Optional,Tuple
+from typing import List, Optional, Dict, Any
 from uuid import UUID
 from datetime import time
-
 
 
 class PostOfficeCreateDTO(BaseModel):
@@ -20,7 +19,8 @@ class PostOfficeCreateDTO(BaseModel):
     working_days: str
     manager_id: Optional[UUID] = None
     status: str = "active"
-    location: Optional[Tuple[float, float]] = None
+    location: Optional[List[float]] = None  # [lat, lng]
+
 
 class PostOfficeResponseDTO(BaseModel):
     id: UUID
@@ -38,7 +38,7 @@ class PostOfficeResponseDTO(BaseModel):
     working_days: str
     manager_id: Optional[UUID]
     status: str
-    location: Optional[Tuple[float, float]]
+    location: Optional[Dict[str, float]] = None  # {"lat": float, "lng": float}
 
     class Config:
         from_attributes = True

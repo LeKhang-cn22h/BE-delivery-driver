@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Tuple
 from uuid import UUID
 from domain.entities.post_offices.post_office import PostOffice
 from domain.repositories.post_office_repository import PostOfficeRepository
@@ -17,9 +17,16 @@ class PostOfficeService:
         return self.repository.get_by_area_code(area_code)
 
     def create_post_office(self, post_office_data) -> PostOffice:
+        # Convert location từ Tuple/List sang dict hoặc giữ nguyên Tuple
+        location = None
+        if post_office_data.location:
+            # location từ DTO là Tuple[float, float] hoặc List[float, float]
+            # Giữ nguyên format (lat, lng)
+            location = tuple(post_office_data.location)
+        
         # Convert DTO to Entity
         post_office = PostOffice(
-            id=None,  # Sẽ được Supabase tự generate
+            id=None,
             code=post_office_data.code,
             name=post_office_data.name,
             address=post_office_data.address,
@@ -34,7 +41,7 @@ class PostOfficeService:
             working_days=post_office_data.working_days,
             manager_id=post_office_data.manager_id,
             status=post_office_data.status,
-            location=post_office_data.location
+            location=location
         )
         return self.repository.create(post_office)
 

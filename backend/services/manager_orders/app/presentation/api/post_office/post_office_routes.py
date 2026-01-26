@@ -23,10 +23,18 @@ def get_post_offices_by_area_code(area_code: str):
 def create_post_office(post_office_data: PostOfficeCreateDTO):
     return service.create_post_office(post_office_data)
 
-@router.patch("/{post_office_id}/status")
-def update_post_office_status(post_office_id: UUID, status: str):
+@router.patch("/{post_office_id}/status/activate")
+def activate_post_office_status(post_office_id: UUID):
     try:
-        service.update_post_office_status(post_office_id, status)
+        service.activate_post_office(post_office_id)
+        return {"message": "Status updated successfully"}
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+@router.patch("/{post_office_id}/status/deactivate")
+def deactivate_post_office(post_office_id: UUID):
+    try:
+        service.deactivate_post_office(post_office_id)
         return {"message": "Status updated successfully"}
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))

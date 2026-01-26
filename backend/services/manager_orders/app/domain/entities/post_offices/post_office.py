@@ -1,7 +1,8 @@
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import List, Optional, Tuple, Union
 from uuid import UUID
 from datetime import time
+
 
 @dataclass
 class PostOffice:
@@ -20,4 +21,4 @@ class PostOffice:
     working_days: str
     manager_id: Optional[UUID]
     status: str
-    location:Optional[dict] = None # e.g., {"latitude": float, "longitude": float}
+    location: Optional[Union[Tuple[float, float], dict]] = None
