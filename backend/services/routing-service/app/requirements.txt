@@ -4,3 +4,4 @@ ortools
 requests
 pydantic
 python-dotenv
+pydantic-settings
