@@ -67,7 +67,18 @@ class SupabasePostOfficeRepository(PostOfficeRepository):
         return [self._to_entity(item) for item in res.data]
 
     def create(self, post_office: PostOffice) -> PostOffice:
-        # Convert entity to dict, loại bỏ id nếu None
+        # Convert location sang PostgreSQL POINT format: (lng, lat)
+        location_str = None
+        if post_office.location:
+            if isinstance(post_office.location, (list, tuple)) and len(post_office.location) == 2:
+                lat, lng = post_office.location[0], post_office.location[1]
+                location_str = f"({lng},{lat})"  # PostgreSQL POINT: (x, y) = (lng, lat)
+            elif isinstance(post_office.location, dict):
+                lat = post_office.location.get('lat') or post_office.location.get('latitude')
+                lng = post_office.location.get('lng') or post_office.location.get('longitude')
+                if lat and lng:
+                    location_str = f"({lng},{lat})"
+        
         data = {
             "code": post_office.code,
             "name": post_office.name,
@@ -77,10 +88,7 @@ class SupabasePostOfficeRepository(PostOfficeRepository):
             "province": post_office.province,
             "area_codes": post_office.area_codes,
             "phone": post_office.phone,
-            "location": (
-                f"({post_office.location.lng},{post_office.location.lat})"
-                if post_office.location else None
-            ),
+            "location": location_str,
             "email": post_office.email,
             "open_time": str(post_office.open_time),
             "close_time": str(post_office.close_time),
