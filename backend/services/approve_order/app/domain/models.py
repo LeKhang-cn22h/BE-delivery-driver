@@ -1,65 +1,69 @@
-# import uuid
-# from sqlalchemy import (
-#     Column, String, Integer, Date, DateTime, Boolean, ForeignKey, Numeric
-# )
-# from sqlalchemy.dialects.postgresql import UUID
-# from sqlalchemy.sql import func
-# from infrastructure.database import Base
+from datetime import datetime
+from typing import Optional, List
+from pydantic import BaseModel
 
 
-# class Order(Base):
-#     __tablename__ = "orders"
-
-#     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-#     user_id = Column(UUID(as_uuid=True))
-#     pickup_point = Column(String)
-#     status = Column(String)
-#     created_at = Column(DateTime, server_default=func.now())
-
-
-# class OrderDetail(Base):
-#     __tablename__ = "order_details"
-
-#     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-#     order_id = Column(UUID(as_uuid=True), ForeignKey("orders.id"))
-#     start_point = Column(String)
-#     price = Column(Numeric)
-#     status = Column(String)
-#     address_detail = Column(String)
-#     area_code = Column(String)
-#     priority_score = Column(Integer)
+class OrderDetailBase(BaseModel):
+    """Base model cho Order Detail"""
+    order_id: str
+    start_point: str
+    price: float
+    status: str
+    address_detail: str
+    area_code: str
+    location: str
+    priority_score: int
 
 
-# class Driver(Base):
-#     __tablename__ = "drivers"
-
-#     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-#     user_id = Column(UUID(as_uuid=True))
-#     name = Column(String)
-#     phone = Column(String)
-#     status = Column(String)
-#     created_at = Column(DateTime, server_default=func.now())
+class OrderDetail(OrderDetailBase):
+    """Order Detail model với ID"""
+    id: str
 
 
-# class Schedule(Base):
-#     __tablename__ = "schedules"
-
-#     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-#     driver_id = Column(UUID(as_uuid=True), ForeignKey("drivers.id"))
-#     scheduled_date = Column(Date)
-#     area_code = Column(String)
-#     status = Column(String)
-#     total_orders = Column(Integer)
-#     completed_orders = Column(Integer, default=0)
-#     failed_orders = Column(Integer, default=0)
-#     created_at = Column(DateTime, server_default=func.now())
+class ScheduleBase(BaseModel):
+    """Base model cho Schedule"""
+    scheduled_date: datetime
+    area_code: str
+    status: str = "pending"
+    total_orders: int = 0
+    completed_orders: int = 0
+    failed_orders: int = 0
+    post_office_id: str
 
 
-# class ScheduleItem(Base):
-#     __tablename__ = "schedule_items"
+class Schedule(ScheduleBase):
+    """Schedule model với ID"""
+    id: str
+    created_at: datetime
 
-#     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-#     schedule_id = Column(UUID(as_uuid=True), ForeignKey("schedules.id"))
-#     order_detail_id = Column(UUID(as_uuid=True), ForeignKey("order_details.id"))
-#     status = Column(String)
-#     queue = Column(Integer)
+
+class ScheduleItemBase(BaseModel):
+    """Base model cho Schedule Item"""
+    schedule_id: str
+    order_detail_id: str
+    status: str = "pending"
+
+
+class ScheduleItem(ScheduleItemBase):
+    """Schedule Item model với ID"""
+    id: str
+    delivered_at: Optional[datetime] = None
+    failure_reason: Optional[str] = None
+    queue: int
+
+
+class OrderProcessingResult(BaseModel):
+    """Kết quả xử lý đơn hàng"""
+    schedule_id: str
+    area_code: str
+    total_orders: int
+    order_detail_ids: List[str]
+    created_at: datetime
+
+
+class BatchProcessingResult(BaseModel):
+    """Kết quả xử lý batch đơn hàng"""
+    total_schedules: int
+    total_orders: int
+    schedules: List[OrderProcessingResult]
+    processed_at: datetime
