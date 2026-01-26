@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Request, HTTPException, Query
+from uuid import UUID
 
 from typing import Optional
 import os
@@ -9,6 +10,7 @@ from services.http_client import HTTPClient
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1/orders", tags=["Orders Gateway"])
+routerP = APIRouter(prefix="/api/v1/post_offices", tags=["Post Offices Gateway"])
 
 # URL tới Order Service (port 8002)
 ORDERS_SERVICE_URL = os.getenv(
@@ -148,3 +150,47 @@ async def update_order_status(
         params={"new_status": new_status},
         headers=headers
     )
+
+
+# ================================
+# POST OFFICE ENDPOINTS
+# ================================
+@routerP.get("/{post_office_id}", summary="Lấy thông tin bưu cục theo ID")
+async def get_post_office(post_office_id: UUID):
+    try:
+        return await orders_client.request(
+            "GET",
+            f"/api/v1/post_offices/{post_office_id}"
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@routerP.get("/area/{area_code}", summary="Lấy danh sách bưu cục theo mã vùng")
+async def get_post_offices_by_area_code(area_code: str):
+    return await orders_client.request(
+        "GET",
+        f"/api/v1/post_offices/area/{area_code}"
+    )
+
+
+@routerP.post("/", summary="Tạo bưu cục mới")
+async def create_post_office(request: Request):
+    body = await request.json()
+    return await orders_client.request(
+        "POST",
+        "/api/v1/post_offices/",
+        json_data=body
+    )
+
+
+@routerP.patch("/{post_office_id}/status", summary="Cập nhật trạng thái bưu cục")
+async def update_post_office_status(post_office_id: UUID, status: str = Query(...)):
+    try:
+        return await orders_client.request(
+            "PATCH",
+            f"/api/v1/post_offices/{post_office_id}/status",
+            params={"status": status}
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))

@@ -8,7 +8,7 @@ import os
 
 app = FastAPI(
     title="Order Management Microservice",
-    description="Microservice quản lý đơn hàng - Khách hàng đặt hàng với nhiều kiện",
+    description="Microservice quản lý đơn hàng, cửa hàng - Khách hàng đặt hàng với nhiều kiện",
     version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc"
@@ -17,7 +17,7 @@ app = FastAPI(
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Trong production nên chỉ định cụ thể
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -25,7 +25,6 @@ app.add_middleware(
 
 # Include routers
 app.include_router(order_router)
-
 app.include_router(post_office_router)
 @app.get("/")
 async def root():
@@ -33,7 +32,7 @@ async def root():
         "service": "Order Management Microservice",
         "status": "running",
         "version": "1.0.0",
-        "description": "Quản lý đơn hàng - 1 đơn nhiều kiện"
+        "description": "Quản lý đơn hàng, cửa hàng - Khách hàng đặt hàng với nhiều kiện"
     }
 
 @app.get("/health")

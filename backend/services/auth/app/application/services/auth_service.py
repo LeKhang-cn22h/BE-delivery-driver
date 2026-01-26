@@ -172,5 +172,6 @@ class AuthService:
             full_name=user.full_name,
             phone=user.phone,
             avatar_url=user.avatar_url,
-            created_at=user.created_at
+            created_at=user.created_at,
+            role=user.role
         )

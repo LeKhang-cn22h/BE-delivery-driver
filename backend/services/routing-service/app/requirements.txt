@@ -1,0 +1,7 @@
+fastapi
+uvicorn[standard]
+ortools
+requests
+pydantic
+python-dotenv
+pydantic-settings
