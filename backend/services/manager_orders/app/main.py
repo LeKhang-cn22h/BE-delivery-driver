@@ -1,8 +1,9 @@
 # main.py
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from presentation.api.order_routes import order_router, post_office_router
-
+from presentation.api.order_routes import order_router
+from presentation.api.post_office.post_office_routes import post_office_router
+from presentation.api.driver.driver_routes import driver_router
 import uvicorn
 import os
 
@@ -26,6 +27,7 @@ app.add_middleware(
 # Include routers
 app.include_router(order_router)
 app.include_router(post_office_router)
+app.include_router(driver_router)
 @app.get("/")
 async def root():
     return {
