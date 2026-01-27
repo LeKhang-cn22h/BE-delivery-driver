@@ -1,8 +1,8 @@
 # main.py
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from presentation.api.order_routes import router as order_router
-from presentation.api.post_office.post_office_routes import router as post_office_router
+from presentation.api.order_routes import order_router, post_office_router
+
 import uvicorn
 import os
 
@@ -17,7 +17,7 @@ app = FastAPI(
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], 
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

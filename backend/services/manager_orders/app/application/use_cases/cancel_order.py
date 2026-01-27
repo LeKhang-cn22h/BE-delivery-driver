@@ -26,7 +26,7 @@ class CancelOrderUseCase:
             raise ValueError(f"Không thể hủy đơn hàng ở trạng thái {order.status.value}")
 
         # Cập nhật trạng thái
-        order.status = OrderStatus.CANCELLED
+        order.status = OrderStatus.cancelled
 
         await self.order_repository.update(order)
         return True

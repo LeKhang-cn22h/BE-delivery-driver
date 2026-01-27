@@ -171,6 +171,21 @@ services:
       timeout: 10s
       retries: 5
       start_period: 30s
+  
+
+#  approve_order_service:
+#    build:
+#      context: ./services/approve_order/app
+#      dockerfile: Dockerfile
+#    container_name: approve_order_service
+#    ports:
+#      - "4000:4000"
+#    env_file:
+#      - ./services/approve_order/app/.env
+#    networks:
+#      - app_network
+#    restart: unless-stopped
+#
 
   # Kafka
   kafka:

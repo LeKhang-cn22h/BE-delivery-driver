@@ -1,6 +1,24 @@
 from pydantic import BaseModel, Field, field_validator
 from typing import List, Optional
 from datetime import datetime
+from enum import Enum
+
+class OrderDetailStatus(str, Enum):
+    pending = "pending"
+    confirmed = "confirmed"
+    picking = "picking"
+    picked_up = "picked_up"
+    delivering = "delivering"
+    completed = "completed"
+    cancelled = "cancelled"
+
+class OrderStatus(str, Enum):
+    pending = "pending"
+    confirmed = "confirmed"
+    processing = "processing"
+    completed = "completed"
+    cancelled = "cancelled"
+
 class GeoPointDTO(BaseModel):
     lat: float
     lng: float
@@ -46,7 +64,7 @@ class OrderDetailCreateDTO(BaseModel):
 class OrderCreateDTO(BaseModel):
     """DTO tạo đơn hàng mới"""
     user_id: str = Field(..., min_length=1, description="ID khách hàng")
-
+    post_office_id: str = Field(..., description="ID bưu cục xử lý đơn hàng")
     # Thông tin lấy hàng
     pickup_point: str = Field(..., min_length=1, description="Địa chỉ lấy hàng")
     pickup_address: str = Field(..., min_length=1, description="Chi tiết địa chỉ lấy")
@@ -85,7 +103,7 @@ class OrderDetailResponseDTO(BaseModel):
     address_detail: str
     area_code: str
     price: float
-    status: str
+    status: OrderDetailStatus
     priority_score: int
 
 
@@ -93,7 +111,7 @@ class OrderResponseDTO(BaseModel):
     """Response đơn hàng đầy đủ"""
     id: str
     user_id: str
-
+    post_office_id: str
     # Thông tin lấy hàng
     pickup_point: str
     pickup_address: str
@@ -102,7 +120,7 @@ class OrderResponseDTO(BaseModel):
     pickup_note: Optional[str]
 
     # Trạng thái
-    status: str
+    status: OrderStatus
     order_type: str
     created_at: datetime
 
@@ -123,7 +141,7 @@ class OrderSummaryDTO(BaseModel):
     """Response tóm tắt đơn hàng (dùng cho list)"""
     id: str
     pickup_point: str
-    status: str
+    status: OrderStatus
     created_at: datetime
     total_packages: int
     total_price: float

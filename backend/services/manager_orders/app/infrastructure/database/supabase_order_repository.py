@@ -33,6 +33,7 @@ class SupabaseOrderRepository(OrderRepository):
     def _to_dict(self, order: Order) -> dict:
         return {
             "user_id": order.user_id,
+            "post_office_id": order.post_office_id,
             "pickup_point": order.pickup_point,
             "pickup_address": order.pickup_address,
             "pickup_area_code": order.pickup_area_code,
@@ -47,6 +48,7 @@ class SupabaseOrderRepository(OrderRepository):
         return Order(
             id=data.get("id"),
             user_id=data.get("user_id"),
+            post_office_id=data.get("post_office_id"),
             pickup_point=data.get("pickup_point"),
             pickup_address=data.get("pickup_address"),
             pickup_area_code=data.get("pickup_area_code"),
