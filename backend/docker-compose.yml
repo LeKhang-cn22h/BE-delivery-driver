@@ -11,6 +11,8 @@ services:
       - AUTH_SERVICE_URL=http://auth_service:7000
       - ORDERS_SERVICE_URL=http://order-service:8002
       - APPROVE_ORDER_SERVICE_URL=http://approve_order_service:4000
+      - WEBSOCKET_SERVICE_URL=ws://websocket:8007
+      - ROUTING_SERVICE_URL=http://routing_service:8386
     volumes:
       - ./gateway/app:/app
     networks:
@@ -20,6 +22,8 @@ services:
       - auth_service
       - order-service
       - approve_order_service
+      - websocket
+      - routing_service
     restart: unless-stopped
     command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
