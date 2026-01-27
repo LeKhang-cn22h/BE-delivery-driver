@@ -1,48 +1,71 @@
-from pydantic import BaseModel
-from typing import Optional
+# domain/models.py
+from pydantic import BaseModel, field_validator
+from typing import Optional, Dict, Any, Union
 from datetime import datetime
 
 
 class OrderDetail(BaseModel):
+    """Model cho order_detail"""
     id: str
     order_id: str
     start_point: str
     price: float
     status: str
-    address_detail: Optional[str] = None
+    address_detail: str
     area_code: Optional[str] = None
-    location: Optional[dict] = None
-    priority_score: Optional[int] = 0
-    created_at: Optional[datetime] = None
+    location: Optional[Union[str, Dict[str, Any]]] = None  # Accept string or dict
+    priority_score: Optional[int] = None
 
-    class Config:
-        from_attributes = True
-
-
-class Schedule(BaseModel):
-    id: str
-    post_office_id: str
-    area_code: str
-    scheduled_date: datetime
-    status: str
-    total_orders: int
-    completed_orders: int = 0
-    failed_orders: int = 0
-    created_at: Optional[datetime] = None
+    @field_validator('location', mode='before')
+    @classmethod
+    def parse_location(cls, v):
+        """Parse PostGIS point format '(x,y)' to dict or keep as is"""
+        if v is None:
+            return None
+        if isinstance(v, str):
+            # Parse '(10.775658,106.693761)' to dict
+            try:
+                coords = v.strip('()').split(',')
+                if len(coords) == 2:
+                    return {
+                        'latitude': float(coords[0]),
+                        'longitude': float(coords[1])
+                    }
+            except:
+                pass
+        return v
 
     class Config:
         from_attributes = True
 
 
 class ScheduleItem(BaseModel):
+    """Model cho schedule_item"""
     id: str
     schedule_id: str
     order_detail_id: str
     status: str
-    queue: int
+    queue: int  # ✅ SỬA 1: Đổi từ 'queue_number' sang 'queue'
     delivered_at: Optional[datetime] = None
     failure_reason: Optional[str] = None
+    # ✅ SỬA 2: Xóa 'created_at' (không tồn tại trong DB)
+
+    class Config:
+        from_attributes = True
+
+
+class Schedule(BaseModel):
+    """Model cho schedule"""
+    id: str
+    driver_id: Optional[str] = None
+    scheduled_date: datetime
+    area_code: str
+    status: str
+    total_orders: int
+    completed_orders: int = 0
+    failed_orders: int = 0
     created_at: Optional[datetime] = None
+    post_office_id: str
 
     class Config:
         from_attributes = True

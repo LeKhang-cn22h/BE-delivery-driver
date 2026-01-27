@@ -14,7 +14,7 @@ class User:
     """
     User Entity - Đại diện cho user trong hệ thống
     
-    Đây là domain entity, không phụ thuộc vào:
+    Đây là domain , không phụ thuộc vào:
     - Database schema
     - API response format
     - External services

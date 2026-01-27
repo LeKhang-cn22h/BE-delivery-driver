@@ -1,0 +1,22 @@
+# FastAPI Framework
+fastapi
+uvicorn[standard]
+pydantic
+pydantic-settings
+
+# Database
+supabase
+postgrest
+
+# Genetic Algorithm & Optimization
+numpy
+scipy
+
+# Utilities
+python-dotenv
+python-multipart
+
+# Testing (optional)
+pytest
+pytest-asyncio
+httpx

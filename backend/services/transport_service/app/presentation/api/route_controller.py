@@ -14,7 +14,7 @@ def optimize():
     Client
       → Controller
       → UseCase
-      → Repository
+      →
       → Supabase
     """
 

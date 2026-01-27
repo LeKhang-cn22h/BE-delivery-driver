@@ -1,5 +1,5 @@
 
-# Repository Interface (Port)
+#  Interface (Port)
 # - Định nghĩa contract cho data access
 # - Không chứa implementation
 # - Infrastructure layer sẽ implement
@@ -12,7 +12,7 @@ from domain.entities.user import User, AuthResult
 
 class AuthRepositoryInterface(ABC):
     """
-    Abstract Repository cho Authentication
+    Abstract  cho Authentication
     
     Đây là "Port" trong Hexagonal Architecture
     - Định nghĩa các method cần có
@@ -99,13 +99,7 @@ class AuthRepositoryInterface(ABC):
     @abstractmethod
     async def get_user_by_token(self, access_token: str) -> User:
         """
-        Lấy user từ access token
-        
-        Args:
-            access_token: JWT token
-            
-        Returns:
-            User entity
+
             
         Raises:
             ValueError: Token không hợp lệ
