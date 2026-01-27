@@ -10,6 +10,8 @@ services:
       - RECEIVE_ORDERS_SERVICE_URL=http://receive_orders_service:8001
       - AUTH_SERVICE_URL=http://auth_service:7000
       - ORDERS_SERVICE_URL=http://order-service:8002
+      - WEBSOCKET_SERVICE_URL=ws://websocket:8007
+      - ROUTING_SERVICE_URL=http://routing_service:8386
     volumes:
       - ./gateway/app:/app
     networks:
@@ -18,6 +20,8 @@ services:
       - receive_orders_service
       - auth_service
       - order-service
+      - websocket
+      - routing_service
     restart: unless-stopped
     command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
@@ -314,8 +318,8 @@ services:
       dockerfile: Dockerfile
     container_name: order-management-service
 
-    ports:
-      - "8002:8002"
+    expose:
+      - 8002
 
     env_file:
       - ./services/manager_orders/app/.env
@@ -337,7 +341,20 @@ services:
       timeout: 10s
       retries: 3
       start_period: 10s
-
+  websocket:
+    build: 
+      context: ./services/WebSocket/app
+      dockerfile: Dockerfile
+    container_name: ws-server
+    ports:
+      - "8007:8007"
+    volumes:
+      - ./services/WebSocket/app:/app
+    networks:
+      - app_network
+    env_file:
+      - ./services/WebSocket/app/.env
+    restart: unless-stopped
 
 networks:
   app_network:
