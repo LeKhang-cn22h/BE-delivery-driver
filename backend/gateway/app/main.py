@@ -114,6 +114,10 @@ app.include_router(
     tags=[" Post Offices"]
 )
 app.include_router(
+    orders_proxy.routerD,
+    tags=[" Drivers"]
+)
+app.include_router(
     routing_proxy.router,
     tags=[" Routing Service"]
 )

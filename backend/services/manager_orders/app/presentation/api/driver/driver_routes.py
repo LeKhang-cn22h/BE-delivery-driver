@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException
 from uuid import UUID
 from application.use_cases.driver.driver_service import DriverService
 from infrastructure.database.driver.supabase_driver_repository import SupabaseDriverRepository
-from application.dto.driver_dto import DriverCreateDTO, DriverResponseDTO, DriverUpdateDTO, DriverStatusUpdateDTO
+from application.dto.driver_dto import DriverDTO, DriverResponseDTO, DriverUpdateDTO
 
 driver_router = APIRouter(prefix="/api/v1/drivers", tags=["Drivers"])
 service = DriverService(SupabaseDriverRepository())
@@ -29,7 +29,7 @@ def get_drivers_by_status(status: str):
         raise HTTPException(status_code=400, detail=str(e))
 
 @driver_router.post("/", response_model=DriverResponseDTO) 
-def create_driver(driver_data: DriverCreateDTO):
+def create_driver(driver_data: DriverDTO):
     try:
         return service.create_driver(driver_data)
     except ValueError as e:

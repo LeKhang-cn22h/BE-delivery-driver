@@ -42,15 +42,23 @@ class DriverService:
         driver.post_office_id = driver_data.post_office_id
         return self.repository.update(driver)
     
-    def available_driver(self,driver_id:UUID)->None:
-        self.repository.update(driver_id,status="available")
+    def available_driver(self, driver_id: UUID) -> None:
+        driver = self.get_driver_by_id(driver_id) 
+        driver.status = "available"               
+        self.repository.update_status(driver)     
 
-    def busy_driver(self,driver_id:UUID)->None:
-        self.repository.update(driver_id,status="busy")
+    def busy_driver(self, driver_id: UUID) -> None:
+        driver = self.get_driver_by_id(driver_id)
+        driver.status = "busy"
+        self.repository.update_status(driver)
 
-    def inactive_driver(self,driver_id:UUID)->None:
-        self.repository.update(driver_id,status="inactive")
+    def inactive_driver(self, driver_id: UUID) -> None:
+        driver = self.get_driver_by_id(driver_id)
+        driver.status = "inactive"
+        self.repository.update_status(driver)
 
-    def off_duty_driver(self,driver_id:UUID)->None:
-        self.repository.update(driver_id,status="off_duty")
+    def off_duty_driver(self, driver_id: UUID) -> None:
+        driver = self.get_driver_by_id(driver_id)
+        driver.status = "off_duty"
+        self.repository.update_status(driver)
         

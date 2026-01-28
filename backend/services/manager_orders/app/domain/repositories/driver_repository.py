@@ -21,9 +21,9 @@ class DriverRepository(ABC):
         pass
 
     @abstractmethod
-    def update(self,driver_id:UUID,status:str) ->None:
+    def update(self,driver_id:UUID) ->None:
         pass
 
     @abstractmethod
-    def update_status(self,driver:Driver) ->Driver:
+    def update_status(self,driver:Driver,status:str) ->Driver:
         pass

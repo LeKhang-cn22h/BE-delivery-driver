@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1/orders", tags=["Orders Gateway"])
 routerP = APIRouter(prefix="/api/v1/post_offices", tags=["Post Offices Gateway"])
-
+routerD = APIRouter(prefix="/api/v1/drivers", tags=["Drivers Gateway"])
 # URL tới Order Service (port 8002)
 ORDERS_SERVICE_URL = os.getenv(
     "ORDERS_SERVICE_URL",
@@ -200,6 +200,98 @@ async def update_post_office_status(post_office_id: UUID):
         return await orders_client.request(
             "PATCH",
             f"/api/v1/post_offices/{post_office_id}/status/deactivate",
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+# driver endpoints proxy
+@routerD.get("/{driver_id}", summary="Lấy thông tin tài xế theo ID")
+async def get_driver(driver_id: UUID):
+    try:
+        return await orders_client.request(
+            "GET",
+            f"/api/v1/drivers/{driver_id}"
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+@routerD.get("/post_office/{post_office_id}", summary="Lấy danh sách tài xế theo ID bưu cục")
+async def get_drivers_by_post_office_id(post_office_id: UUID):
+    try:
+        return await orders_client.request(
+            "GET",
+            f"/api/v1/drivers/post_office/{post_office_id}"
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@routerD.get("/status/{status}", summary="Lấy danh sách tài xế theo trạng thái")
+async def get_drivers_by_status(status: str):
+    try:
+        return await orders_client.request(
+            "GET",
+            f"/api/v1/drivers/status/{status}"
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@routerD.post("/", summary="Tạo tài xế mới")
+async def create_driver(request: Request):
+    body = await request.json()
+    try:
+        return await orders_client.request(
+            "POST",
+            "/api/v1/drivers/",
+            json_data=body
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+@routerD.patch("/{driver_id}", summary="Cập nhật thông tin tài xế")
+async def update_driver(driver_id: UUID, request: Request):
+    body = await request.json()
+    try:
+        return await orders_client.request(
+            "PATCH",
+            f"/api/v1/drivers/{driver_id}",
+            json_data=body
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+@routerD.patch("/{driver_id}/available", summary="Cập nhật trạng thái tài xế thành available")
+async def update_driver_available(driver_id: UUID):
+    try:
+        return await orders_client.request(
+            "PATCH",
+            f"/api/v1/drivers/{driver_id}/available"
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+@routerD.patch("/{driver_id}/busy", summary="Cập nhật trạng thái tài xế thành busy")
+async def update_driver_busy(driver_id: UUID):
+    try:
+        return await orders_client.request(
+            "PATCH",
+            f"/api/v1/drivers/{driver_id}/busy"
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    
+@routerD.patch("/{driver_id}/off_duty", summary="cập nhật trạng thái tài xế off_duty")
+async def update_driver_off_duty(driver_id:UUID):
+    try:
+        return await orders_client.request(
+            "PATCH",
+            f"/api/v1/drivers/{driver_id}/off_duty"
+        )
+    except ValueError as e:
+        raise HTTPException(status=500, detail=str(e))
+    
+@routerD.patch("/{driver_id}/inactive", summary="Cập nhật trạng thái tài xế thành inactive")
+async def update_driver_inactive(driver_id: UUID):
+    try:
+        return await orders_client.request(
+            "PATCH",
+            f"/api/v1/drivers/{driver_id}/inactive"
         )
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))

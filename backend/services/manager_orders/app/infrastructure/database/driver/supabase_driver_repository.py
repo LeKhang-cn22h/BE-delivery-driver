@@ -42,6 +42,17 @@ class SupabaseDriverRepository(DriverRepository):
         )
         return [self._to_entity(row) for row in res.data] if res.data else []
     
+    def get_by_status(self, status:str):
+        res=(
+            self.supabase
+            .schema("delivery")
+            .table("drivers")
+            .select("id,user_id,name,phone,status")
+            .eq("status",status)
+            .execute()
+        )
+        return [self._to_entity(row) for row in res.data] if res.data else []
+    
     def create(self, driver:Driver)->Optional[Driver]:
         res=(
             self.supabase

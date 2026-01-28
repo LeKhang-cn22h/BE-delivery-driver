@@ -8,7 +8,7 @@ class DriverDTO(BaseModel):
     user_id: UUID
     name: str
     phone: Optional[str] = None
-    status: str
+    status: Optional[str]="available"
     post_office_id: Optional[UUID] = None
 
     class Config:
@@ -16,8 +16,9 @@ class DriverDTO(BaseModel):
 
 class DriverResponseDTO(DriverDTO):
     id: UUID
-    created_at: datetime
+    created_at: Optional[datetime] = None
 
+    
 class DriverDetailDTO(DriverDTO):
     created_at: Optional[datetime] = None
 
