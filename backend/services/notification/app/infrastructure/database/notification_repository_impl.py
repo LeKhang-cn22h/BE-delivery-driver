@@ -3,28 +3,31 @@ from typing import List, Optional, Dict, Any
 from datetime import datetime, timedelta
 import logging
 
+
 from domain.entities.notification import (
     Notification,
-    NotificationPreference,
     NotificationType,
     NotificationStatus,
     NotificationPriority
 )
 from domain.repositories.notification_repository import (
-    NotificationRepository,
-    NotificationPreferenceRepository
+    NotificationRepository
 )
 from infrastructure.database.supabase_client import SupabaseClient
 
+
 logger = logging.getLogger(__name__)
+
 
 
 class SupabaseNotificationRepository(NotificationRepository):
     """Implementation của NotificationRepository sử dụng Supabase"""
 
+
     def __init__(self):
         self.client = SupabaseClient.get_client()
         self.table_name = "notifications"
+
 
     def _to_entity(self, data: Dict[str, Any]) -> Notification:
         """Convert database row to Notification entity"""
@@ -43,6 +46,7 @@ class SupabaseNotificationRepository(NotificationRepository):
             updated_at=datetime.fromisoformat(data['updated_at'].replace('Z', '+00:00')) if data.get('updated_at') else None
         )
 
+
     def _to_dict(self, notification: Notification) -> Dict[str, Any]:
         """Convert Notification entity to database dict"""
         return {
@@ -60,6 +64,7 @@ class SupabaseNotificationRepository(NotificationRepository):
             "updated_at": notification.updated_at.isoformat() if notification.updated_at else None
         }
 
+
     async def create(self, notification: Notification) -> Notification:
         """Tạo thông báo mới"""
         try:
@@ -74,6 +79,7 @@ class SupabaseNotificationRepository(NotificationRepository):
         except Exception as e:
             logger.error(f"Error creating notification: {str(e)}")
             raise
+
 
     async def get_by_id(self, notification_id: str) -> Optional[Notification]:
         """Lấy thông báo theo ID"""
@@ -90,6 +96,7 @@ class SupabaseNotificationRepository(NotificationRepository):
         except Exception as e:
             logger.error(f"Error getting notification by id {notification_id}: {str(e)}")
             return None
+
 
     async def get_by_user_id(
         self,
@@ -124,6 +131,7 @@ class SupabaseNotificationRepository(NotificationRepository):
             logger.error(f"Error getting notifications for user {user_id}: {str(e)}")
             return []
 
+
     async def update(self, notification: Notification) -> Notification:
         """Cập nhật thông báo"""
         try:
@@ -144,6 +152,7 @@ class SupabaseNotificationRepository(NotificationRepository):
             logger.error(f"Error updating notification {notification.id}: {str(e)}")
             raise
 
+
     async def delete(self, notification_id: str) -> bool:
         """Xóa thông báo (soft delete)"""
         try:
@@ -157,6 +166,7 @@ class SupabaseNotificationRepository(NotificationRepository):
         except Exception as e:
             logger.error(f"Error deleting notification {notification_id}: {str(e)}")
             return False
+
 
     async def mark_as_read(self, notification_id: str) -> bool:
         """Đánh dấu đã đọc"""
@@ -174,6 +184,7 @@ class SupabaseNotificationRepository(NotificationRepository):
         except Exception as e:
             logger.error(f"Error marking notification {notification_id} as read: {str(e)}")
             return False
+
 
     async def mark_all_as_read(self, user_id: str) -> int:
         """Đánh dấu tất cả đã đọc"""
@@ -195,6 +206,7 @@ class SupabaseNotificationRepository(NotificationRepository):
             logger.error(f"Error marking all notifications as read for user {user_id}: {str(e)}")
             return 0
 
+
     async def get_unread_count(self, user_id: str) -> int:
         """Đếm số thông báo chưa đọc"""
         try:
@@ -209,6 +221,7 @@ class SupabaseNotificationRepository(NotificationRepository):
         except Exception as e:
             logger.error(f"Error getting unread count for user {user_id}: {str(e)}")
             return 0
+
 
     async def delete_old_notifications(self, days: int = 30) -> int:
         """Xóa thông báo cũ"""
@@ -227,91 +240,3 @@ class SupabaseNotificationRepository(NotificationRepository):
         except Exception as e:
             logger.error(f"Error deleting old notifications: {str(e)}")
             return 0
-
-
-class SupabaseNotificationPreferenceRepository(NotificationPreferenceRepository):
-    """Implementation của NotificationPreferenceRepository sử dụng Supabase"""
-
-    def __init__(self):
-        self.client = SupabaseClient.get_client()
-        self.table_name = "notification_preferences"
-
-    def _to_entity(self, data: Dict[str, Any]) -> NotificationPreference:
-        """Convert database row to NotificationPreference entity"""
-        return NotificationPreference(
-            id=data['id'],
-            user_id=data['user_id'],
-            email_enabled=data.get('email_enabled', True),
-            push_enabled=data.get('push_enabled', True),
-            sms_enabled=data.get('sms_enabled', False),
-            order_notifications=data.get('order_notifications', True),
-            delivery_notifications=data.get('delivery_notifications', True),
-            promotion_notifications=data.get('promotion_notifications', True),
-            system_notifications=data.get('system_notifications', True),
-            created_at=datetime.fromisoformat(data['created_at'].replace('Z', '+00:00')),
-            updated_at=datetime.fromisoformat(data['updated_at'].replace('Z', '+00:00')) if data.get('updated_at') else None
-        )
-
-    async def create(self, preference: NotificationPreference) -> NotificationPreference:
-        """Tạo preference mới"""
-        try:
-            data = preference.to_dict()
-            result = self.client.table(self.table_name).insert(data).execute()
-            
-            if result.data:
-                logger.info(f"Created preference for user {preference.user_id}")
-                return self._to_entity(result.data[0])
-            
-            raise Exception("Failed to create preference")
-        except Exception as e:
-            logger.error(f"Error creating preference: {str(e)}")
-            raise
-
-    async def get_by_user_id(self, user_id: str) -> Optional[NotificationPreference]:
-        """Lấy preference của user"""
-        try:
-            result = self.client.table(self.table_name)\
-                .select("*")\
-                .eq("user_id", user_id)\
-                .execute()
-            
-            if result.data:
-                return self._to_entity(result.data[0])
-            return None
-        except Exception as e:
-            logger.error(f"Error getting preference for user {user_id}: {str(e)}")
-            return None
-
-    async def update(self, preference: NotificationPreference) -> NotificationPreference:
-        """Cập nhật preference"""
-        try:
-            data = preference.to_dict()
-            data['updated_at'] = datetime.utcnow().isoformat()
-            
-            result = self.client.table(self.table_name)\
-                .update(data)\
-                .eq("user_id", preference.user_id)\
-                .execute()
-            
-            if result.data:
-                logger.info(f"Updated preference for user {preference.user_id}")
-                return self._to_entity(result.data[0])
-            
-            raise Exception("Failed to update preference")
-        except Exception as e:
-            logger.error(f"Error updating preference: {str(e)}")
-            raise
-
-    async def delete(self, user_id: str) -> bool:
-        """Xóa preference"""
-        try:
-            self.client.table(self.table_name)\
-                .delete()\
-                .eq("user_id", user_id)\
-                .execute()
-            
-            logger.info(f"Deleted preference for user {user_id}")
-            return True
-        except Exception as e:
-            logger.error(f"Error deleting preference for user {user_id}: {str(e)}")
-            return False

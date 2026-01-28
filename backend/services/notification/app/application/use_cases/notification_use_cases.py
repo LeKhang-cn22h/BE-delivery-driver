@@ -179,8 +179,8 @@ class SendMultiChannelNotificationUseCase:
         self.email_service_url = os.getenv("EMAIL_SERVICE_URL", "http://localhost:8010")
         self.push_service_url = os.getenv("PUSH_NOTIFICATION_SERVICE_URL", "http://localhost:8011")
         
-        logger.info(f"📧 Email Service URL: {self.email_service_url}")
-        logger.info(f"📱 Push Service URL: {self.push_service_url}")
+        logger.info(f"Email Service URL: {self.email_service_url}")
+        logger.info(f"Push Service URL: {self.push_service_url}")
 
     async def execute(
         self,
@@ -197,7 +197,7 @@ class SendMultiChannelNotificationUseCase:
     ) -> Notification:
         """Gửi thông báo qua multiple channels (Microservice)."""
         try:
-            logger.info(f"🚀 Sending {notification_type} notification to {user_type} {user_id}")
+            logger.info(f"Sending {notification_type} notification to {user_type} {user_id}")
 
             # Step 1: Tạo thông báo vào Supabase
             notification = Notification(
@@ -210,7 +210,7 @@ class SendMultiChannelNotificationUseCase:
             )
             
             db_notification = await self.repository.create(notification)
-            logger.info(f"✅ Notification saved to DB: {db_notification.id}")
+            logger.info(f"Notification saved to DB: {db_notification.id}")
 
             # Step 2: Gửi tới external services
             if user_type == "customer":
@@ -218,12 +218,12 @@ class SendMultiChannelNotificationUseCase:
             elif user_type == "shipper":
                 await self._send_push_via_service(user_id, device_token, title, body, data)
             else:
-                logger.warning(f"⚠️ Unknown user type: {user_type}")
+                logger.warning(f"Unknown user type: {user_type}")
 
             return db_notification
 
         except Exception as e:
-            logger.error(f"❌ Error sending multi-channel notification: {str(e)}")
+            logger.error(f"Error sending multi-channel notification: {str(e)}")
             raise
 
     async def _send_email_via_service(
@@ -232,7 +232,7 @@ class SendMultiChannelNotificationUseCase:
         """Call Email Service (Port 8010) via HTTP POST."""
         try:
             if not user_email:
-                logger.warning(f"⚠️ User {user_id} has no email")
+                logger.warning(f"User {user_id} has no email")
                 return False
 
             payload = {
@@ -248,17 +248,17 @@ class SendMultiChannelNotificationUseCase:
                 response = await client.post(f"{self.email_service_url}/send", json=payload)
                 
                 if response.status_code == 200:
-                    logger.info(f"✉️ Email sent to {user_email} (via Email Service)")
+                    logger.info(f"Email sent to {user_email} (via Email Service)")
                     return True
                 else:
-                    logger.warning(f"⚠️ Email Service returned {response.status_code}")
+                    logger.warning(f"Email Service returned {response.status_code}")
                     return False
 
         except httpx.ConnectError:
-            logger.error(f"❌ Cannot connect to Email Service: {self.email_service_url}")
+            logger.error(f"Cannot connect to Email Service: {self.email_service_url}")
             return False
         except Exception as e:
-            logger.error(f"❌ Error calling Email Service: {str(e)}")
+            logger.error(f"Error calling Email Service: {str(e)}")
             return False
 
     async def _send_push_via_service(
@@ -267,7 +267,7 @@ class SendMultiChannelNotificationUseCase:
         """Call Push Service (Port 8011) via HTTP POST."""
         try:
             if not device_token:
-                logger.warning(f"⚠️ User {user_id} has no device token")
+                logger.warning(f"User {user_id} has no device token")
                 return False
 
             payload = {
@@ -282,15 +282,15 @@ class SendMultiChannelNotificationUseCase:
                 response = await client.post(f"{self.push_service_url}/send", json=payload)
                 
                 if response.status_code == 200:
-                    logger.info(f"📱 Push sent to device {device_token[:20]}... (via Push Service)")
+                    logger.info(f"Push sent to device {device_token[:20]}... (via Push Service)")
                     return True
                 else:
-                    logger.warning(f"⚠️ Push Service returned {response.status_code}")
+                    logger.warning(f"Push Service returned {response.status_code}")
                     return False
 
         except httpx.ConnectError:
-            logger.error(f"❌ Cannot connect to Push Service: {self.push_service_url}")
+            logger.error(f"Cannot connect to Push Service: {self.push_service_url}")
             return False
         except Exception as e:
-            logger.error(f"❌ Error calling Push Service: {str(e)}")
+            logger.error(f"Error calling Push Service: {str(e)}")
             return False

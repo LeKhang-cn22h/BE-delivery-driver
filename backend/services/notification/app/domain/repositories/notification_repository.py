@@ -1,9 +1,7 @@
-# domain/repositories/notification_repository.py
 from abc import ABC, abstractmethod
-from typing import List, Optional, Dict, Any
+from typing import List, Optional
 from domain.entities.notification import (
     Notification,
-    NotificationPreference,
     NotificationType,
     NotificationStatus
 )
@@ -62,28 +60,4 @@ class NotificationRepository(ABC):
     @abstractmethod
     async def delete_old_notifications(self, days: int = 30) -> int:
         """Xóa thông báo cũ"""
-        pass
-
-
-class NotificationPreferenceRepository(ABC):
-    """Interface cho Notification Preference Repository"""
-
-    @abstractmethod
-    async def create(self, preference: NotificationPreference) -> NotificationPreference:
-        """Tạo preference mới"""
-        pass
-
-    @abstractmethod
-    async def get_by_user_id(self, user_id: str) -> Optional[NotificationPreference]:
-        """Lấy preference của user"""
-        pass
-
-    @abstractmethod
-    async def update(self, preference: NotificationPreference) -> NotificationPreference:
-        """Cập nhật preference"""
-        pass
-
-    @abstractmethod
-    async def delete(self, user_id: str) -> bool:
-        """Xóa preference"""
         pass
