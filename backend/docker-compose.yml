@@ -416,7 +416,20 @@ services:
       retries: 3
       start_period: 10s
 
-
+  websocket:
+    build: 
+      context: ./services/WebSocket/app
+      dockerfile: Dockerfile
+    container_name: ws-server
+    ports:
+      - "8007:8007"
+    volumes:
+      - ./services/WebSocket/app:/app
+    networks:
+      - app_network
+    env_file:
+      - ./services/WebSocket/app/.env
+    restart: unless-stopped
 networks:
   app_network:
     driver: bridge
