@@ -1,11 +1,13 @@
+#domain/Repositoris.py
 from abc import ABC, abstractmethod
+
 from typing import List, Optional
 from datetime import datetime
 from domain.models import OrderDetail, Schedule, ScheduleItem
 
 
 class IOrderRepository(ABC):
-    """Interface cho Order Repository"""
+    """Interface cho Order """
 
     @abstractmethod
     async def get_pending_order_details(self, post_office_id: str) -> List[OrderDetail]:
@@ -37,7 +39,7 @@ class IOrderRepository(ABC):
 
 
 class IScheduleRepository(ABC):
-    """Interface cho Schedule Repository"""
+    """Interface cho Schedule"""
 
     @abstractmethod
     async def create_schedule(self, schedule_data: dict) -> Schedule:
@@ -70,7 +72,7 @@ class IScheduleRepository(ABC):
 
 
 class IScheduleItemRepository(ABC):
-    """Interface cho Schedule Item Repository"""
+    """Interface cho Schedule Item"""
 
     @abstractmethod
     async def create_schedule_item(self, item_data: dict) -> ScheduleItem:

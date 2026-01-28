@@ -155,7 +155,7 @@ class AuthService:
     # HELPER: Convert Entity → Response
     # ========================================
     def _to_auth_response(self, result) -> AuthResponse:
-        """Convert AuthResult entity thành AuthResponse schema"""
+        """Convert AuthResult  thành AuthResponse schema"""
         return AuthResponse(
             access_token=result.tokens.access_token,
             refresh_token=result.tokens.refresh_token,
@@ -165,7 +165,7 @@ class AuthService:
         )
     
     def _to_user_response(self, user) -> UserResponse:
-        """Convert User entity thành UserResponse schema"""
+        """Convert User  thành UserResponse schema"""
         return UserResponse(
             id=user.id,
             email=user.email,

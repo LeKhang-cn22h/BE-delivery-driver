@@ -10,6 +10,7 @@ services:
       - RECEIVE_ORDERS_SERVICE_URL=http://receive_orders_service:8001
       - AUTH_SERVICE_URL=http://auth_service:7000
       - ORDERS_SERVICE_URL=http://order-service:8002
+      - APPROVE_ORDER_SERVICE_URL=http://approve_order_service:4000
       - WEBSOCKET_SERVICE_URL=ws://websocket:8007
       - ROUTING_SERVICE_URL=http://routing_service:8386
     volumes:
@@ -20,6 +21,7 @@ services:
       - receive_orders_service
       - auth_service
       - order-service
+      - approve_order_service
       - websocket
       - routing_service
     restart: unless-stopped
@@ -150,7 +152,64 @@ services:
       - MINIO_SECRET_KEY=admin123
       - MINIO_BUCKET=datalake
 
-
+#
+#  scheduler-service:
+#    build:
+#      context: ./services/scheduler_service/app
+#      dockerfile: Dockerfile
+#
+#    container_name: scheduler-service
+#    ports:
+#      - "${SCHEDULER_PORT}:8003"
+#
+#    env_file:
+#      - .env
+#
+#    environment:
+#      # API Configuration
+#      - API_HOST=${API_HOST}
+#      - API_PORT=${API_PORT}
+#      - API_PREFIX=${API_PREFIX}
+#
+#      # CORS
+#      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
+#
+#      # Supabase
+#      - SUPABASE_URL=${SUPABASE_URL}
+#      - SUPABASE_KEY=${SUPABASE_KEY}
+#
+#      # GA Parameters
+#      - GA_POPULATION_SIZE=${GA_POPULATION_SIZE}
+#      - GA_GENERATIONS=${GA_GENERATIONS}
+#      - GA_MUTATION_RATE=${GA_MUTATION_RATE}
+#      - GA_CROSSOVER_RATE=${GA_CROSSOVER_RATE}
+#      - GA_ELITE_SIZE=${GA_ELITE_SIZE}
+#      - GA_TOURNAMENT_SIZE=${GA_TOURNAMENT_SIZE}
+#
+#      # Constraints
+#      - MAX_ORDERS_PER_DRIVER=${MAX_ORDERS_PER_DRIVER}
+#      - MAX_WORKING_HOURS=${MAX_WORKING_HOURS}
+#
+#      # Weights
+#      - PRIORITY_WEIGHT=${PRIORITY_WEIGHT}
+#      - DISTANCE_WEIGHT=${DISTANCE_WEIGHT}
+#      - BALANCE_WEIGHT=${BALANCE_WEIGHT}
+#
+#    volumes:
+#      - ./logs:/app/logs
+#
+#    restart: unless-stopped
+#
+#    healthcheck:
+#      test: [ "CMD", "curl", "-f", "http://localhost:8003/health" ]
+#      interval: 30s
+#      timeout: 10s
+#      retries: 3
+#      start_period: 10s
+#
+#    networks:
+#      - app_network
+#
 
   zookeeper:
     image: confluentinc/cp-zookeeper:7.5.0
@@ -173,19 +232,19 @@ services:
       start_period: 30s
   
 
-#  approve_order_service:
-#    build:
-#      context: ./services/approve_order/app
-#      dockerfile: Dockerfile
-#    container_name: approve_order_service
-#    ports:
-#      - "4000:4000"
-#    env_file:
-#      - ./services/approve_order/app/.env
-#    networks:
-#      - app_network
-#    restart: unless-stopped
-#
+  approve_order_service:
+    build:
+      context: ./services/approve_order/app
+      dockerfile: Dockerfile
+    container_name: approve_order_service
+    ports:
+      - "4000:4000"
+    env_file:
+      - ./services/approve_order/app/.env
+    networks:
+      - app_network
+    restart: unless-stopped
+
 
   # Kafka
   kafka:
@@ -333,8 +392,8 @@ services:
       dockerfile: Dockerfile
     container_name: order-management-service
 
-    expose:
-      - 8002
+    ports:
+      - "8002:8002"
 
     env_file:
       - ./services/manager_orders/app/.env
@@ -356,20 +415,7 @@ services:
       timeout: 10s
       retries: 3
       start_period: 10s
-  websocket:
-    build: 
-      context: ./services/WebSocket/app
-      dockerfile: Dockerfile
-    container_name: ws-server
-    ports:
-      - "8007:8007"
-    volumes:
-      - ./services/WebSocket/app:/app
-    networks:
-      - app_network
-    env_file:
-      - ./services/WebSocket/app/.env
-    restart: unless-stopped
+
 
 networks:
   app_network:

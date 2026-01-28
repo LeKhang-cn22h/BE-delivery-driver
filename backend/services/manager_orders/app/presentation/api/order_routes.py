@@ -1,4 +1,4 @@
-# app/presentation/api/routes.py
+# app/presentation/apy
 
 from fastapi import APIRouter, HTTPException, Depends, status, Query
 from typing import List
@@ -82,7 +82,7 @@ async def create_order(
     4. Hệ thống tạo 1 order + nhiều order_details
     """
     try:
-        # Convert DTO to domain entity
+        # Convert DTO to domain
         order_details = [
             OrderDetail(
                 id=None,

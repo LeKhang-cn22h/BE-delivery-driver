@@ -23,7 +23,7 @@ class SupabaseAuthRepository(AuthRepositoryInterface):
     # ========================================
     def _to_user_entity(self, user_row: dict) -> User:
         """
-        Convert database row từ public.users thành User entity
+        Convert database row từ public.users thành User
         
         THAY ĐỔI: Không dùng user_metadata nữa, dùng public.users
         """

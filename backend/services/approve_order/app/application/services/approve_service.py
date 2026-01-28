@@ -82,6 +82,8 @@ class OrderProcessingService:
             order_details=order_details
         )
 
+    # application/services/approve_service.py
+
     async def _create_schedule_for_area(
             self,
             post_office_id: str,
@@ -96,7 +98,8 @@ class OrderProcessingService:
             post_office_id=post_office_id,
             area_code=area_code,
             scheduled_date=scheduled_date,
-            total_orders=len(order_details)
+            total_orders=len(order_details),
+            status='draft'  # ✅ Truyền status='draft'
         )
 
         # 2. Tạo schedule_items
@@ -109,7 +112,7 @@ class OrderProcessingService:
         order_detail_ids = [od.id for od in order_details]
         await self.order_repo.update_order_details_status(
             order_detail_ids=order_detail_ids,
-            status='scheduled'
+            status='confirmed'  # ✅ Đổi từ 'scheduled' sang 'confirmed'
         )
 
         return OrderProcessingResult(

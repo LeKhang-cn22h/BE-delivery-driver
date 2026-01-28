@@ -1,5 +1,7 @@
+# presentation/api/routes.py
 from fastapi import APIRouter, HTTPException, Depends
 from datetime import datetime
+from typing import Optional, Dict, List
 from pydantic import BaseModel
 from application.services.approve_service import OrderProcessingService
 from infrastructure.database import Database
@@ -24,20 +26,183 @@ class ProcessOrdersByAreaRequest(BaseModel):
     scheduled_date: datetime
 
 
+class GetOrdersRequest(BaseModel):
+    """Request để lấy danh sách đơn hàng"""
+    post_office_id: str
+    status: Optional[str] = "pending"  # pending, scheduled, completed, failed
+
+
+class GetOrdersByAreaRequest(BaseModel):
+    """Request để lấy đơn hàng theo vùng"""
+    post_office_id: str
+    area_code: str
+    status: Optional[str] = "pending"
+
+
 # Dependency injection
 def get_order_processing_service() -> OrderProcessingService:
     """Tạo OrderProcessingService với dependencies"""
     db_client = Database.get_client()
 
-    order_repo = OrderRepository(db_client,schema="delivery")
-    schedule_repo = ScheduleRepository(db_client,schema="delivery")
-    schedule_item_repo = ScheduleItemRepository(db_client,schema="delivery")
+    order_repo = OrderRepository(db_client, schema="delivery")
+    schedule_repo = ScheduleRepository(db_client, schema="delivery")
+    schedule_item_repo = ScheduleItemRepository(db_client, schema="delivery")
 
     return OrderProcessingService(
         order_repo=order_repo,
         schedule_repo=schedule_repo,
         schedule_item_repo=schedule_item_repo
     )
+
+
+@router.post("/list-with-priority")
+async def get_orders_with_priority(
+        request: GetOrdersRequest,
+        service: OrderProcessingService = Depends(get_order_processing_service)
+):
+    """
+    API lấy tất cả đơn hàng với priority score
+
+    - Lấy order_details theo post_office_id
+    - Sắp xếp theo priority_score giảm dần
+    - Có thể filter theo status
+
+    Returns:
+        List các order_details với priority_score
+    """
+    try:
+        orders = await service.order_repo.get_all_orders_with_priority(
+            post_office_id=request.post_office_id,
+            status=request.status
+        )
+
+        return {
+            "success": True,
+            "total": len(orders),
+            "data": [
+                {
+                    "id": order.id,
+                    "order_id": order.order_id,
+                    "start_point": order.start_point,
+                    "address_detail": order.address_detail,
+                    "area_code": order.area_code,
+                    "priority_score": order.priority_score,
+                    "status": order.status,
+                    "price": order.price,
+                    "location": order.location
+                }
+                for order in orders
+            ]
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Lỗi khi lấy danh sách đơn hàng: {str(e)}"
+        )
+
+
+@router.post("/group-by-area")
+async def get_orders_grouped_by_area(
+        request: GetOrdersRequest,
+        service: OrderProcessingService = Depends(get_order_processing_service)
+):
+    """
+    API lấy đơn hàng và nhóm theo area_code
+
+    - Lấy tất cả order_details
+    - Nhóm theo area_code
+    - Mỗi area có danh sách orders đã sắp xếp theo priority
+
+    Returns:
+        Dict với key là area_code, value là list orders
+    """
+    try:
+        grouped_orders = await service.order_repo.get_orders_grouped_by_area(
+            post_office_id=request.post_office_id,
+            status=request.status
+        )
+
+        # Format response
+        result = {}
+        total_orders = 0
+
+        for area_code, orders in grouped_orders.items():
+            total_orders += len(orders)
+            result[area_code] = {
+                "area_code": area_code,
+                "total_orders": len(orders),
+                "orders": [
+                    {
+                        "id": order.id,
+                        "order_id": order.order_id,
+                        "start_point": order.start_point,
+                        "address_detail": order.address_detail,
+                        "priority_score": order.priority_score,
+                        "status": order.status,
+                        "price": order.price
+                    }
+                    for order in orders
+                ]
+            }
+
+        return {
+            "success": True,
+            "total_areas": len(result),
+            "total_orders": total_orders,
+            "data": result
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Lỗi khi nhóm đơn hàng theo vùng: {str(e)}"
+        )
+
+
+@router.post("/list-by-area")
+async def get_orders_by_area(
+        request: GetOrdersByAreaRequest,
+        service: OrderProcessingService = Depends(get_order_processing_service)
+):
+    """
+    API lấy đơn hàng của một vùng cụ thể
+
+    Returns:
+        List orders của vùng đó, sắp xếp theo priority
+        Trả về empty list nếu không có đơn hàng
+    """
+    try:
+        orders = await service.order_repo.get_orders_by_area(
+            post_office_id=request.post_office_id,
+            area_code=request.area_code,
+            status=request.status
+        )
+
+        return {
+            "success": True,
+            "area_code": request.area_code,
+            "total": len(orders),
+            "data": [
+                {
+                    "id": order.id,
+                    "order_id": order.order_id,
+                    "start_point": order.start_point,
+                    "address_detail": order.address_detail,
+                    "area_code": order.area_code,
+                    "priority_score": order.priority_score,
+                    "status": order.status,
+                    "price": order.price
+                }
+                for order in orders
+            ]
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Lỗi khi lấy đơn hàng theo vùng: {str(e)}"
+        )
 
 
 @router.post("/process-all")
@@ -69,6 +234,12 @@ async def process_all_pending_orders(
             "data": result.dict()
         }
 
+    except ValueError as e:
+        # ValueError khi không có đơn hàng pending
+        raise HTTPException(
+            status_code=404,
+            detail=str(e)
+        )
     except Exception as e:
         raise HTTPException(
             status_code=500,
@@ -106,6 +277,7 @@ async def process_orders_by_area(
         }
 
     except ValueError as e:
+        # ValueError khi không có đơn hàng pending cho vùng này
         raise HTTPException(
             status_code=404,
             detail=str(e)
@@ -126,13 +298,14 @@ async def get_schedule_items(
     API lấy danh sách order_details trong một schedule
 
     Returns:
-        List các schedule items đã được sắp xếp theo queue
+        List các schedule items đã được sắp xếp theo queue_number
     """
     try:
         items = await service.schedule_item_repo.get_items_by_schedule(schedule_id)
 
         return {
             "success": True,
+            "total": len(items),
             "data": [item.dict() for item in items]
         }
 

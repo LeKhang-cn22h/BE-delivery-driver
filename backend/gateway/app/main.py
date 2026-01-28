@@ -19,6 +19,7 @@ sys.stderr.reconfigure(encoding="utf-8")
 from middleware.auth_middleware import AuthMiddleware, RoleCheckMiddleware
 
 # Import routers
+from routers import auth_proxy, receive_orders_proxy, routing_proxy, orders_proxy, approve_order_gateway
 from routers import auth_proxy, receive_orders_proxy, routing_proxy, orders_proxy, tracking_proxy
 
 # Configure logging
@@ -140,6 +141,10 @@ app.include_router(
 app.include_router(
     orders_proxy.router,
     tags=[" Orders Domain Service"]
+)
+app.include_router(
+    approve_order_gateway.router,
+    tags=[" approve order"]
 )
 
 @app.get("/", tags=["System"])
