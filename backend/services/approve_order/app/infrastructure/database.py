@@ -9,7 +9,7 @@ class Database:
     _instance: Optional[Client] = None
 
     @classmethod
-    def get_client(cls, schema: str = "public") -> Client:
+    def get_client(cls, schema: str = "delivery") -> Client:
         """
         Lấy Supabase client instance (Singleton pattern)
 
@@ -28,7 +28,7 @@ class Database:
             cls._instance = create_client(supabase_url, supabase_key)
 
         # Set schema cho client
-        if schema != "public":
+        if schema != "delivery":
             cls._instance.schema(schema)
 
         return cls._instance

@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from presentation.api.driver_scheduling_routes import router as driver_scheduling
 from presentation.api.routes import router as order_router
 import uvicorn
 
@@ -21,7 +22,7 @@ app.add_middleware(
 
 # Include routers
 app.include_router(order_router)
-
+app.include_router(driver_scheduling)
 
 @app.get("/")
 async def root():

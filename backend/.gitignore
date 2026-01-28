@@ -91,6 +91,11 @@ data-platform/lake/gold/*
 # =========================
 .env
 .env.*
+.env(1)
+.env (1)
+**.env(1)
+**.env
+
 *.key
 *.pem
 secrets/
