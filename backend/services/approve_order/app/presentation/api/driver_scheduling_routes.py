@@ -29,28 +29,7 @@ async def create_driver_schedule(
         request: SchedulingRequest,
         service: DriverShiftSchedulingService = Depends(get_scheduling_service)
 ):
-    """
-    Tạo lịch làm việc cho tài xế sử dụng thuật toán GA
 
-    **Parameters:**
-    - **scheduled_date**: Ngày cần xếp lịch
-    - **area_codes**: Danh sách mã khu vực cần phân đơn
-    - **post_office_id**: ID của bưu cục
-    - **shift_configs**: Cấu hình các ca làm việc
-    - **population_size**: Kích thước quần thể GA (mặc định: 50)
-    - **generations**: Số thế hệ GA (mặc định: 100)
-    - **mutation_rate**: Tỷ lệ đột biến (mặc định: 0.1)
-    - **crossover_rate**: Tỷ lệ lai ghép (mặc định: 0.8)
-    - **elite_size**: Số cá thể ưu tú được giữ lại (mặc định: 5)
-
-    **Returns:**
-    - Kết quả xếp lịch bao gồm:
-        - Danh sách phân công cho từng tài xế
-        - Tổng số đơn đã xếp
-        - Danh sách đơn chưa được xếp
-        - Điểm fitness
-        - Thông tin thuật toán
-    """
     try:
         result = await service.schedule_shifts(request)
         return result
@@ -72,16 +51,7 @@ async def get_driver_schedule(
         scheduled_date: date,
         service: DriverShiftSchedulingService = Depends(get_scheduling_service)
 ):
-    """
-    Lấy lịch làm việc của tài xế theo ngày
 
-    **Parameters:**
-    - **driver_id**: ID của tài xế
-    - **scheduled_date**: Ngày cần xem lịch
-
-    **Returns:**
-    - Thông tin lịch làm việc của tài xế
-    """
     try:
         schedule = await service.get_driver_schedule(driver_id, scheduled_date)
         return schedule

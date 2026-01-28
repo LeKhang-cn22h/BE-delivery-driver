@@ -19,8 +19,8 @@ sys.stderr.reconfigure(encoding="utf-8")
 from middleware.auth_middleware import AuthMiddleware, RoleCheckMiddleware
 
 # Import routers
-from routers import auth_proxy, receive_orders_proxy, routing_proxy, orders_proxy, approve_order_gateway
-from routers import auth_proxy, receive_orders_proxy, routing_proxy, orders_proxy, tracking_proxy
+
+from routers import auth_proxy, receive_orders_proxy, routing_proxy, orders_proxy, tracking_proxy, approve_order_gateway, driver_scheduling_gateway
 
 # Configure logging
 logging.basicConfig(
@@ -122,13 +122,17 @@ app.include_router(
     routing_proxy.router,
     tags=[" Routing Service"]
 )
+app.include_router(
+    driver_scheduling_gateway.router,
+    tags=[" Routing Service"]
+)
 
 app.include_router(
     tracking_proxy.router,
     tags=[" Driver Tracking Service"]
 )
 
-# TODO: Thêm router khác
+
 # from routers import transport_proxy
 # app.include_router(
 #     transport_proxy.router,
