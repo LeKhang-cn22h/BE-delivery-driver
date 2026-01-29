@@ -155,6 +155,14 @@ async def update_order_status(
 # ================================
 # POST OFFICE ENDPOINTS
 # ================================
+@routerP.get("/", summary="Lấy tất cả bưu cục")
+async def get_all_post_offices():
+    """Lấy danh sách tất cả bưu cục"""
+    return await orders_client.request(
+        "GET",
+        "/api/v1/post_offices/"
+    )
+
 @routerP.get("/{post_office_id}", summary="Lấy thông tin bưu cục theo ID")
 async def get_post_office(post_office_id: UUID):
     try:

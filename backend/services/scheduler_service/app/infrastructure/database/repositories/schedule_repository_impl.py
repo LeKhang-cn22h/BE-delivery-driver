@@ -353,7 +353,6 @@ class OrderRepositoryImpl(IOrderRepository):
             id=UUID(data["id"]),
             order_id=UUID(data["order_id"]),
             start_point=data["start_point"],
-            price=float(data["price"]),
             status=data["status"],
             address_detail=data.get("address_detail"),
             area_code=data.get("area_code"),

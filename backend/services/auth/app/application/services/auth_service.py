@@ -7,7 +7,7 @@
 # - Gọi repository để thao tác data
 # - Convert Entity ↔ Schema
 # ============================================
-
+from domain.entities.user import GeoPoint
 from typing import Optional
 from fastapi import HTTPException
 import logging
@@ -120,6 +120,14 @@ class AuthService:
         except ValueError as e:
             raise HTTPException(status_code=401, detail=str(e))
     
+    async def search_user_by_phone_or_mail(self,data:str) -> dict:
+        """Use case: Lấy thông tin user hiện tại"""
+        try:
+            user = await self.auth_repository.search_user_by_phone_or_mail(data)
+            return user
+            
+        except ValueError as e:
+            raise HTTPException(status_code=401, detail=str(e))
     # ========================================
     # UPDATE PROFILE
     # ========================================
@@ -130,11 +138,20 @@ class AuthService:
     ) -> UserResponse:
         """Use case: Cập nhật profile"""
         try:
+            # Convert GeoPointDTO sang GeoPoint entity nếu có
+            location = None
+            if data.location:
+                location = GeoPoint(lat=data.location.lat, lng=data.location.lng)
+            
             user = await self.auth_repository.update_user(
                 access_token=access_token,
                 full_name=data.full_name,
                 phone=data.phone,
-                avatar_url=data.avatar_url
+                avatar_url=data.avatar_url,
+                address_detail=data.address_detail,
+                area_code=data.area_code,
+                location=location,
+                fcm_token=data.fcm_token
             )
             return self._to_user_response(user)
             
@@ -166,12 +183,22 @@ class AuthService:
     
     def _to_user_response(self, user) -> UserResponse:
         """Convert User  thành UserResponse schema"""
+        location_dto = None
+        if user.location:
+            from application.schemas.auth_schemas import GeoPointDTO
+            location_dto = GeoPointDTO(lat=user.location.lat, lng=user.location.lng)
         return UserResponse(
-            id=user.id,
-            email=user.email,
-            full_name=user.full_name,
-            phone=user.phone,
-            avatar_url=user.avatar_url,
-            created_at=user.created_at,
-            role=user.role
-        )
+        id=user.id,
+        email=user.email,
+        full_name=user.full_name,
+        phone=user.phone,
+        avatar_url=user.avatar_url,
+        address_detail=user.address_detail,
+        area_code=user.area_code,
+        location=location_dto,
+        role=user.role,
+        is_active=user.is_active,
+        created_at=user.created_at,
+        updated_at=user.updated_at,
+        fcm_token=user.fcm_token
+    )

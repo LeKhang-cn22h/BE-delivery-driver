@@ -72,7 +72,6 @@ class ScheduleItemRepository:
                     order_details!inner(
                         id,
                         start_point,
-                        price,
                         address_detail,
                         priority_score,
                         area_code

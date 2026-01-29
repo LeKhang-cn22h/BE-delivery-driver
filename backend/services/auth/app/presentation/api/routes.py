@@ -168,6 +168,9 @@ async def get_current_user(
     """
     return await auth_service.get_current_user(token)
 
+@router.get("/search")
+async def search_user_by_phone_or_mail(data:str,auth_service: AuthService = Depends(get_auth_service)):
+    return await auth_service.search_user_by_phone_or_mail(data)
 
 @router.patch(
     "/me",

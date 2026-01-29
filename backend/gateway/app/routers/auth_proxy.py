@@ -141,6 +141,20 @@ async def get_current_user(authorization: Optional[str] = Header(None)):
     return await auth_client.request("GET", "/api/v1/auth/me", headers=headers)
 
 
+@router.get("/search", summary="tìm số điện thoại hoặc email người dùng")
+async def search_user_phone_or_mail(
+    data: str,
+    authorization: Optional[str] = Header(None),
+):
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Authorization header required")
+
+    return await auth_client.request(
+        "GET",
+        "/api/v1/auth/search",
+        params={"data": data},          
+        headers={"Authorization": authorization},  
+    )
 # ============================================
 # PATCH /me - Cập nhật profile
 # ============================================

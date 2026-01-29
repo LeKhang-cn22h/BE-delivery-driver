@@ -19,8 +19,7 @@ sys.stderr.reconfigure(encoding="utf-8")
 from middleware.auth_middleware import AuthMiddleware, RoleCheckMiddleware
 
 # Import routers
-
-from routers import auth_proxy, receive_orders_proxy, routing_proxy, orders_proxy, tracking_proxy, approve_order_gateway, driver_scheduling_gateway
+from routers import auth_proxy, receive_orders_proxy, routing_proxy, orders_proxy, tracking_proxy, approve_order_gateway, driver_scheduling_gateway, notification_proxy
 
 # Configure logging
 logging.basicConfig(
@@ -66,8 +65,14 @@ app = FastAPI(
     }
 )
 
+# ===== AUTH MIDDLEWARE =====
+# Verify JWT token cho protected routes
+
+app.add_middleware(
+    AuthMiddleware,
+    auth_service_url=os.getenv("AUTH_SERVICE_URL", "http://auth_service:7000")
+)
 # ===== CORS MIDDLEWARE =====
-# Phải thêm TRƯỚC auth middleware
 
 app.add_middleware(
     CORSMiddleware,
@@ -77,13 +82,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ===== AUTH MIDDLEWARE =====
-# Verify JWT token cho protected routes
-
-app.add_middleware(
-    AuthMiddleware,
-    auth_service_url=os.getenv("AUTH_SERVICE_URL", "http://auth_service:7000")
-)
 
 # ===== ROLE CHECK MIDDLEWARE (Optional) =====
 # Uncomment nếu cần role-based access control
@@ -132,6 +130,11 @@ app.include_router(
     tags=[" Driver Tracking Service"]
 )
 
+app.include_router(
+    notification_proxy.router,
+    prefix="/api/v1",
+    tags=["Notifications"]
+)
 
 # from routers import transport_proxy
 # app.include_router(
@@ -226,6 +229,7 @@ async def health_check():
     services = {
         "auth_service": os.getenv("AUTH_SERVICE_URL", "http://auth_service:7000"),
         "receive_orders_service": os.getenv("RECEIVE_ORDERS_SERVICE_URL", "http://receive_orders_service:8001"),
+        "notification_service": os.getenv("NOTIFICATION_SERVICE_URL", "http://notification_service:8003"),
     }
     
     # Check each service
@@ -329,6 +333,7 @@ async def startup_event():
     logger.info(f"Auth Service: {os.getenv('AUTH_SERVICE_URL', 'http://auth_service:7000')}")
     logger.info(f"Orders Service: {os.getenv('RECEIVE_ORDERS_SERVICE_URL', 'http://receive_orders_service:8001')}")
     logger.info(f"CORS Origins: {os.getenv('CORS_ORIGINS', '*')}")
+    logger.info(f"Notification Service: {os.getenv('NOTIFICATION_SERVICE_URL', 'http://notification_service:8003')}")
     logger.info("=" * 70)
     logger.info(" API Documentation: http://localhost:8000/docs")
     logger.info("=" * 70)

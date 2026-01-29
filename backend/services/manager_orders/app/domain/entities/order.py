@@ -1,8 +1,8 @@
-# app/domain/entities/order.py
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional, List
 from enum import Enum
+from uuid import UUID
 
 class OrderStatus(str, Enum):
     pending = "pending"
@@ -35,13 +35,12 @@ class OrderDetail:
     address_detail: str  # Chi tiết địa chỉ giao hàng
     area_code: str  # Mã khu vực giao hàng
     location: Optional[dict]  # Tọa độ địa chỉ giao
-    price: float  # Phí giao cho kiện hàng này
     status: DetailStatus  # Trạng thái giao hàng
     priority_score: int  # Độ ưu tiên (cao hơn = giao trước)
+    note_send:Optional[str] 
+    recipient_id:Optional[str]
 
     def validate(self):
-        if self.price <= 0:
-            raise ValueError("Giá phải lớn hơn 0")
         if not self.start_point:
             raise ValueError("Địa chỉ giao hàng là bắt buộc")
         if not self.address_detail:
@@ -96,10 +95,6 @@ class Order:
         # Validate từng kiện hàng
         for detail in self.order_details:
             detail.validate()
-
-    def calculate_total_price(self) -> float:
-        """Tính tổng phí giao hàng (tất cả các kiện)"""
-        return sum(detail.price for detail in self.order_details)
 
     def get_total_packages(self) -> int:
         """Tổng số kiện hàng"""

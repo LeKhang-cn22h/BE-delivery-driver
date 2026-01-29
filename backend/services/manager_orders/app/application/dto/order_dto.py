@@ -2,6 +2,7 @@ from pydantic import BaseModel, Field, field_validator
 from typing import List, Optional
 from datetime import datetime
 from enum import Enum
+from uuid import UUID
 
 class OrderDetailStatus(str, Enum):
     pending = "pending"
@@ -42,9 +43,9 @@ class OrderDetailCreateDTO(BaseModel):
     address_detail: str = Field(..., min_length=1, description="Chi tiết địa chỉ")
     area_code: str = Field(..., min_length=1, description="Mã khu vực giao")
     location: Optional[GeoPointDTO] = Field(None, description="Tọa độ {lat, lng}")
-    price: float = Field(..., gt=0, description="Phí giao kiện này")
     priority_score: int = Field(default=0, description="Độ ưu tiên")
-
+    note_send:Optional[str] =Field(None, description="ghi chú cho người giao hàng")
+    recipient_id:Optional[str]=Field(..., description="id của người nhận")
     @field_validator("location", mode="before")
     @classmethod
     def parse_location(cls, v):
@@ -52,12 +53,6 @@ class OrderDetailCreateDTO(BaseModel):
             return None
         if isinstance(v, str):
             return GeoPointDTO.from_point_string(v)
-        return v
-    @field_validator('price')
-    @classmethod
-    def validate_price(cls, v):
-        if v <= 0:
-            raise ValueError('Giá phải lớn hơn 0')
         return v
 
 
@@ -72,7 +67,6 @@ class OrderCreateDTO(BaseModel):
     pickup_location: Optional[GeoPointDTO]= Field(None, description="Tọa độ lấy hàng")
     pickup_phone: str = Field(..., min_length=1, description="SĐT liên hệ lấy hàng")
     pickup_note: Optional[str] = Field(None, description="Ghi chú khi lấy hàng")
-
     order_type: str = Field(..., pattern='^(drop_off|pickup)$', description="Loại đơn")
 
 
@@ -102,9 +96,11 @@ class OrderDetailResponseDTO(BaseModel):
     start_point: str
     address_detail: str
     area_code: str
-    price: float
     status: OrderDetailStatus
     priority_score: int
+    note_send:Optional[str]
+    recipient_id:str
+    
 
 
 class OrderResponseDTO(BaseModel):
@@ -128,7 +124,6 @@ class OrderResponseDTO(BaseModel):
     total_packages: int
     delivered_packages: int
     failed_packages: int
-    total_price: float
 
     # Chi tiết các kiện
     order_details: List[OrderDetailResponseDTO]
@@ -144,7 +139,6 @@ class OrderSummaryDTO(BaseModel):
     status: OrderStatus
     created_at: datetime
     total_packages: int
-    total_price: float
 
     class Config:
         from_attributes = True

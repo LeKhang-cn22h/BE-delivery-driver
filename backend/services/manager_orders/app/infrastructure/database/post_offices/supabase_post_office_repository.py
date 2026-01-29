@@ -12,7 +12,6 @@ class SupabasePostOfficeRepository(PostOfficeRepository):
     def __init__(self):
         self.supabase = SupabaseClient.get_client()
 
-
     def _parse_point(self, point: str | None):
         if not point:
             return None
@@ -25,23 +24,50 @@ class SupabasePostOfficeRepository(PostOfficeRepository):
 
     def _to_entity(self, data: dict) -> PostOffice:
         return PostOffice(
-        id=UUID(data["id"]),
-        code=data["code"],
-        name=data["name"],
-        address=data["address"],
-        ward=data.get("ward"),
-        district=data.get("district"),
-        province=data.get("province"),
-        area_codes=data["area_codes"],
-        phone=data.get("phone"),
-        email=data.get("email"),
-        open_time=time.fromisoformat(data["open_time"]),
-        close_time=time.fromisoformat(data["close_time"]),
-        working_days=data["working_days"],
-        manager_id=UUID(data["manager_id"]) if data.get("manager_id") else None,
-        status=data["status"],
-        location=self._parse_point(data.get("location"))
-    )
+            id=UUID(data["id"]),
+            code=data["code"],
+            name=data["name"],
+            address=data["address"],
+            ward=data.get("ward"),
+            district=data.get("district"),
+            province=data.get("province"),
+            area_codes=data["area_codes"],
+            phone=data.get("phone"),
+            email=data.get("email"),
+            open_time=time.fromisoformat(data["open_time"]),
+            close_time=time.fromisoformat(data["close_time"]),
+            working_days=data["working_days"],
+            manager_id=UUID(data["manager_id"]) if data.get("manager_id") else None,
+            status=data["status"],
+            location=self._parse_point(data.get("location"))
+        )
+
+    # Get all post offices
+    def get_all(self) -> List[PostOffice]:
+        """Lấy tất cả bưu cục"""
+        res = (
+            self.supabase
+            .schema("delivery")
+            .table("post_offices")
+            .select("*")
+            .order("name")  # Sắp xếp theo tên
+            .execute()
+        )
+        return [self._to_entity(item) for item in res.data] if res.data else []
+
+    # Get active post offices only
+    def get_all_active(self) -> List[PostOffice]:
+        """Lấy tất cả bưu cục đang hoạt động"""
+        res = (
+            self.supabase
+            .schema("delivery")
+            .table("post_offices")
+            .select("*")
+            .eq("status", "active")
+            .order("name")
+            .execute()
+        )
+        return [self._to_entity(item) for item in res.data] if res.data else []
 
     def get_by_id(self, post_office_id: UUID) -> Optional[PostOffice]:
         res = (
@@ -62,6 +88,7 @@ class SupabasePostOfficeRepository(PostOfficeRepository):
             .table("post_offices")
             .select("*")
             .contains("area_codes", [area_code])
+            .eq("status", "active")  #Chỉ lấy những bưu cục active
             .execute()
         )
         return [self._to_entity(item) for item in res.data]

@@ -9,7 +9,6 @@ class OrderDetail(BaseModel):
     id: str
     order_id: str
     start_point: str
-    price: float
     status: str
     address_detail: str
     area_code: Optional[str] = None

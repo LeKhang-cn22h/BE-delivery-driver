@@ -1,4 +1,3 @@
-# app/application/use_cases/create_order.py
 from typing import List
 from domain.entities.order import Order, OrderDetail, OrderStatus, DetailStatus
 from domain.repositories.order_repository import OrderRepository

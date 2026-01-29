@@ -88,7 +88,6 @@ async def get_orders_with_priority(
                     "area_code": order.area_code,
                     "priority_score": order.priority_score,
                     "status": order.status,
-                    "price": order.price,
                     "location": order.location
                 }
                 for order in orders
@@ -140,7 +139,6 @@ async def get_orders_grouped_by_area(
                         "address_detail": order.address_detail,
                         "priority_score": order.priority_score,
                         "status": order.status,
-                        "price": order.price
                     }
                     for order in orders
                 ]
@@ -192,7 +190,6 @@ async def get_orders_by_area(
                     "area_code": order.area_code,
                     "priority_score": order.priority_score,
                     "status": order.status,
-                    "price": order.price
                 }
                 for order in orders
             ]
