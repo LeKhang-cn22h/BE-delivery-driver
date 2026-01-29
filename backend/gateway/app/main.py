@@ -19,12 +19,7 @@ sys.stderr.reconfigure(encoding="utf-8")
 from middleware.auth_middleware import AuthMiddleware, RoleCheckMiddleware
 
 # Import routers
-<<<<<<< HEAD
-
-from routers import auth_proxy, receive_orders_proxy, routing_proxy, orders_proxy, tracking_proxy, approve_order_gateway, driver_scheduling_gateway
-=======
-from routers import auth_proxy, receive_orders_proxy, routing_proxy, orders_proxy, notification_proxy
->>>>>>> 9aadbde (notification_service)
+from routers import auth_proxy, receive_orders_proxy, routing_proxy, orders_proxy, tracking_proxy, approve_order_gateway, driver_scheduling_gateway, notification_proxy
 
 # Configure logging
 logging.basicConfig(
