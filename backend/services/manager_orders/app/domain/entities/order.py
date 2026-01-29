@@ -28,10 +28,7 @@ class DetailStatus(str, Enum):
 
 @dataclass
 class OrderDetail:
-    """
-    Mỗi OrderDetail = 1 kiện hàng với địa chỉ giao riêng
-    Ví dụ: Khách gửi 3 kiện đến 3 địa chỉ khác nhau = 3 order_details
-    """
+
     id: Optional[str]
     order_id: Optional[str]
     start_point: str  # Địa chỉ giao hàng (người nhận)
