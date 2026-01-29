@@ -41,7 +41,7 @@ class OrderDetail:
     status: DetailStatus  # Trạng thái giao hàng
     priority_score: int  # Độ ưu tiên (cao hơn = giao trước)
     note_send:Optional[str] 
-    recipient_id:Optional[UUID]
+    recipient_id:Optional[str]
 
     def validate(self):
         if not self.start_point:

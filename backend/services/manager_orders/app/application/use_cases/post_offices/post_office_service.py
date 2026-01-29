@@ -7,6 +7,14 @@ class PostOfficeService:
     def __init__(self, repository: PostOfficeRepository):
         self.repository = repository
 
+    def get_all_post_offices(self) -> List[PostOffice]:
+        """Lấy tất cả bưu cục"""
+        return self.repository.get_all()
+
+    def get_all_active_post_offices(self) -> List[PostOffice]:
+        """Lấy tất cả bưu cục đang hoạt động (dùng cho customer)"""
+        return self.repository.get_all_active()
+
     def get_post_office_by_id(self, post_office_id: UUID) -> PostOffice:
         post_office = self.repository.get_by_id(post_office_id)
         if not post_office:
@@ -46,7 +54,11 @@ class PostOfficeService:
         return self.repository.create(post_office)
 
     def activate_post_office(self, post_office_id: UUID) -> None:
+        # Verify post office exists
+        self.get_post_office_by_id(post_office_id)
         self.repository.update(post_office_id, status="active")
 
     def deactivate_post_office(self, post_office_id: UUID) -> None:
+        # Verify post office exists
+        self.get_post_office_by_id(post_office_id)
         self.repository.update(post_office_id, status="inactive")

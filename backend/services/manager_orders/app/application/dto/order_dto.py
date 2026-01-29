@@ -45,7 +45,7 @@ class OrderDetailCreateDTO(BaseModel):
     location: Optional[GeoPointDTO] = Field(None, description="Tọa độ {lat, lng}")
     priority_score: int = Field(default=0, description="Độ ưu tiên")
     note_send:Optional[str] =Field(None, description="ghi chú cho người giao hàng")
-    recipient_id:Optional[UUID]=Field(..., description="id của người nhận")
+    recipient_id:Optional[str]=Field(..., description="id của người nhận")
     @field_validator("location", mode="before")
     @classmethod
     def parse_location(cls, v):
@@ -98,8 +98,8 @@ class OrderDetailResponseDTO(BaseModel):
     area_code: str
     status: OrderDetailStatus
     priority_score: int
-    note_send:str
-    recipient_id:UUID
+    note_send:Optional[str]
+    recipient_id:str
     
 
 
