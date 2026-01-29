@@ -66,8 +66,14 @@ app = FastAPI(
     }
 )
 
+# ===== AUTH MIDDLEWARE =====
+# Verify JWT token cho protected routes
+
+app.add_middleware(
+    AuthMiddleware,
+    auth_service_url=os.getenv("AUTH_SERVICE_URL", "http://auth_service:7000")
+)
 # ===== CORS MIDDLEWARE =====
-# Phải thêm TRƯỚC auth middleware
 
 app.add_middleware(
     CORSMiddleware,
@@ -77,13 +83,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ===== AUTH MIDDLEWARE =====
-# Verify JWT token cho protected routes
-
-app.add_middleware(
-    AuthMiddleware,
-    auth_service_url=os.getenv("AUTH_SERVICE_URL", "http://auth_service:7000")
-)
 
 # ===== ROLE CHECK MIDDLEWARE (Optional) =====
 # Uncomment nếu cần role-based access control
