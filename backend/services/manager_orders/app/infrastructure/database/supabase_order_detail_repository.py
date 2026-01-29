@@ -38,10 +38,11 @@ class SupabaseOrderDetailRepository(OrderDetailRepository):
             "address_detail": detail.address_detail,
             "area_code": detail.area_code,
             "location": self._point_to_db(detail.location),
-
-            "price": detail.price,
             "status": detail.status.value if isinstance(detail.status, DetailStatus) else detail.status,
-            "priority_score": detail.priority_score
+            "priority_score": detail.priority_score,
+            "note_send":detail.note_send,
+            "recipient_id":detail.recipient_id
+
         }
 
     def _from_dict(self, data: dict) -> OrderDetail:
@@ -52,9 +53,10 @@ class SupabaseOrderDetailRepository(OrderDetailRepository):
             address_detail=data.get("address_detail"),
             area_code=data.get("area_code"),
             location=self._point_from_db(data.get("location")),
-            price=data.get("price"),
             status=DetailStatus(data.get("status")),
-            priority_score=data.get("priority_score", 0)
+            priority_score=data.get("priority_score", 0),
+            note_send=data.get("note_send"),
+            recipient_id=data.get("recipient_id")
         )
 
     async def create_batch(self, order_details: List[OrderDetail]) -> List[OrderDetail]:

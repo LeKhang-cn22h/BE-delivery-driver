@@ -84,7 +84,7 @@ class DriverSchedulingRepository:
         def _get_orders():
             orders = (
                 self.get_table("order_details")
-                .select("id, order_id, start_point, price, address_detail, area_code, location, priority_score")
+                .select("id, order_id, start_point, address_detail, area_code, location, priority_score")
                 .in_("area_code", area_codes)
                 .eq("status", "pending")
                 .execute()

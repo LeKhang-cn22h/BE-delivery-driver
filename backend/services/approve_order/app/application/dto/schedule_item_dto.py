@@ -112,7 +112,6 @@ class ScheduleItemDetailResponse(ScheduleItemResponse):
                     "address_detail": "123 Nguyễn Huệ, Q1",
                     "area_code": "HCM-Q1",
                     "priority_score": 95,
-                    "price": 50000
                 }
             }
         }
@@ -130,7 +129,6 @@ class ScheduleItemWithOrderInfo(BaseModel):
     address_detail: str
     area_code: str
     priority_score: int
-    price: float
     start_point: str
     location: Optional[dict] = None
 

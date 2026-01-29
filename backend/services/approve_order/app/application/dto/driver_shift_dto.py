@@ -19,7 +19,6 @@ class OrderDetailForScheduling(BaseModel):
     id: UUID
     order_id: UUID
     start_point: str
-    price: float
     address_detail: Optional[str] = None
     area_code: str
     location: tuple[float, float]  # (lat, lon)

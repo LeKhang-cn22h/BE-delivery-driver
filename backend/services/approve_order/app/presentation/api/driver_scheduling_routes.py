@@ -278,7 +278,7 @@ async def debug_full_flow(
         # Step 1: Query order_details
         order_details = (
             supabase.schema("delivery").table("order_details")
-            .select("id, order_id, start_point, price, address_detail, area_code, location, priority_score, status")
+            .select("id, order_id, start_point, address_detail, area_code, location, priority_score, status")
             .in_("area_code", area_codes)
             .eq("status", "pending")
             .execute()

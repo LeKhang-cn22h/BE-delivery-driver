@@ -1,5 +1,3 @@
-# app/presentation/apy
-
 from fastapi import APIRouter, HTTPException, Depends, status, Query
 from typing import List
 from pydantic import BaseModel
@@ -91,9 +89,11 @@ async def create_order(
                 address_detail=detail.address_detail,
                 area_code=detail.area_code,
                 location=detail.location,
-                price=detail.price,
                 status=DetailStatus.pending,
-                priority_score=detail.priority_score
+                priority_score=detail.priority_score,
+                note_send=detail.note_send,
+                recipient_id=detail.recipient_id
+
             )
             for detail in order_data.order_details
         ]
@@ -131,7 +131,6 @@ async def create_order(
             total_packages=created_order.get_total_packages(),
             delivered_packages=created_order.get_delivered_packages(),
             failed_packages=created_order.get_failed_packages(),
-            total_price=created_order.calculate_total_price(),
             order_details=[
                 OrderDetailResponseDTO(
                     id=d.id,
@@ -139,9 +138,11 @@ async def create_order(
                     start_point=d.start_point,
                     address_detail=d.address_detail,
                     area_code=d.area_code,
-                    price=d.price,
                     status=d.status.value,
-                    priority_score=d.priority_score
+                    priority_score=d.priority_score,
+                    note_send=d.note_send,
+                    recipient_id=d.recipient_id
+
                 )
                 for d in created_order.order_details
             ]
@@ -184,7 +185,6 @@ async def get_order(
             total_packages=order.get_total_packages(),
             delivered_packages=order.get_delivered_packages(),
             failed_packages=order.get_failed_packages(),
-            total_price=order.calculate_total_price(),
             order_details=[
                 OrderDetailResponseDTO(
                     id=d.id,
@@ -192,9 +192,11 @@ async def get_order(
                     start_point=d.start_point,
                     address_detail=d.address_detail,
                     area_code=d.area_code,
-                    price=d.price,
                     status=d.status.value,
-                    priority_score=d.priority_score
+                    priority_score=d.priority_score,
+                    note_send=d.note_send,
+                    recipient_id=d.recipient_id
+
                 )
                 for d in order.order_details
             ]
@@ -231,7 +233,6 @@ async def list_customer_orders(
                 status=order.status.value,
                 created_at=order.created_at,
                 total_packages=order.get_total_packages(),
-                total_price=order.calculate_total_price()
             )
             for order in orders
         ]

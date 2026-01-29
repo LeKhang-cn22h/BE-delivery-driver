@@ -13,7 +13,6 @@ class OrderDetail:
     id: UUID
     order_id: UUID
     start_point: str  # JSON text hoặc địa chỉ
-    price: float
     status: str
     address_detail: Optional[str] = None
     area_code: str = None
