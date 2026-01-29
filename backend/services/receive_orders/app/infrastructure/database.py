@@ -1,20 +1,14 @@
-# app/infrastructure/database.py
-from supabase import create_client
 import os
+from supabase import create_client, Client
 
+class Database:
+    _client: Client = None
 
-class SupabaseClient:
-    _instance = None
-
-    def __new__(cls):
-        if cls._instance is None:
-            instance = super().__new__(cls)
-            instance._client = create_client(
+    @classmethod
+    def get_client(cls, schema: str = "delivery") -> Client:
+        if cls._client is None:
+            cls._client = create_client(
                 os.getenv("SUPABASE_URL"),
-                os.getenv("SUPABASE_KEY")
+                os.getenv("SUPABASE_SERVICE_ROLE_KEY")
             )
-            cls._instance = instance
-        return cls._instance
-
-    def get_client(self):
-        return self._client
+        return cls._client.schema(schema)

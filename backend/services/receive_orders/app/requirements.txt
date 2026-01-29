@@ -2,10 +2,10 @@ fastapi
 uvicorn[standard]
 redis
 python-dotenv
-supabase>=2.0.0  # hoặc supabase>=2.3.0
-httpx>=0.24.0
-pika>=1.3.0
-aio-pika>=9.0.0
+supabase # hoặc supabase>=2.3.0
+httpx
+pika
+aio-pika
 confluent-kafka
 kafka-python
 

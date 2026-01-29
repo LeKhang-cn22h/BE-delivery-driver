@@ -1,0 +1,35 @@
+# Web Framework
+fastapi
+uvicorn[standard]
+
+# Database
+supabase==2.0.3
+postgrest==0.13.0
+
+# Messaging
+kafka-python
+
+# Data Validation
+pydantic
+pydantic-settings
+
+# Utilities
+python-dotenv
+python-multipart
+
+# HTTP Client
+httpx==0.24.1
+requests
+
+# Logging
+python-json-logger
+
+# Testing (optional)
+pytest
+pytest-asyncio
+pytest-cov
+
+# Development (optional)
+black
+flake8
+mypy

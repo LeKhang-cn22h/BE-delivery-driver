@@ -1,4 +1,4 @@
-# infrastructure/repositories/order_repository.py
+
 from typing import List, Dict, Optional
 from supabase import Client
 from domain.models import OrderDetail
