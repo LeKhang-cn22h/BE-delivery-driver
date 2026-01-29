@@ -1,5 +1,4 @@
-
-#  Interface (Port)
+# Repository Interface (Port)
 # - Định nghĩa contract cho data access
 # - Không chứa implementation
 # - Infrastructure layer sẽ implement
@@ -7,12 +6,12 @@
 
 from abc import ABC, abstractmethod
 from typing import Optional
-from domain.entities.user import User, AuthResult
+from domain.entities.user import User, AuthResult, GeoPoint
 
 
 class AuthRepositoryInterface(ABC):
     """
-    Abstract  cho Authentication
+    Abstract Repository cho Authentication
     
     Đây là "Port" trong Hexagonal Architecture
     - Định nghĩa các method cần có
@@ -26,8 +25,11 @@ class AuthRepositoryInterface(ABC):
         email: str,
         password: str,
         full_name: str,
-        role: str = "customer",
-        phone: Optional[str] = None
+        phone: Optional[str] = None,
+        address_detail: Optional[str] = None,
+        area_code: Optional[str] = None,
+        location: Optional[GeoPoint] = None,
+        role: str = "customer"
     ) -> AuthResult:
         """
         Đăng ký user mới
@@ -37,6 +39,10 @@ class AuthRepositoryInterface(ABC):
             password: Mật khẩu
             full_name: Họ tên
             phone: Số điện thoại (optional)
+            address_detail: Địa chỉ chi tiết (optional)
+            area_code: Mã khu vực (optional)
+            location: Tọa độ vị trí (optional)
+            role: Vai trò (default: customer)
             
         Returns:
             AuthResult với tokens và user info
@@ -50,7 +56,8 @@ class AuthRepositoryInterface(ABC):
     async def login(
         self,
         email: str,
-        password: str
+        password: str,
+        fcm_token: Optional[str] = None
     ) -> AuthResult:
         """
         Đăng nhập
@@ -58,6 +65,7 @@ class AuthRepositoryInterface(ABC):
         Args:
             email: Email
             password: Mật khẩu
+            fcm_token: Firebase Cloud Messaging token (optional)
             
         Returns:
             AuthResult với tokens và user info
@@ -99,11 +107,21 @@ class AuthRepositoryInterface(ABC):
     @abstractmethod
     async def get_user_by_token(self, access_token: str) -> User:
         """
-
+        Lấy thông tin user từ token
+        
+        Args:
+            access_token: JWT token
+            
+        Returns:
+            User entity
             
         Raises:
             ValueError: Token không hợp lệ
         """
+        pass
+    
+    @abstractmethod
+    async def search_user_by_phone_or_mail(self,data:str)->User:
         pass
     
     @abstractmethod
@@ -112,7 +130,11 @@ class AuthRepositoryInterface(ABC):
         access_token: str,
         full_name: Optional[str] = None,
         phone: Optional[str] = None,
-        avatar_url: Optional[str] = None
+        avatar_url: Optional[str] = None,
+        address_detail: Optional[str] = None,
+        area_code: Optional[str] = None,
+        location: Optional[GeoPoint] = None,
+        fcm_token: Optional[str] = None
     ) -> User:
         """
         Cập nhật thông tin user
@@ -122,6 +144,10 @@ class AuthRepositoryInterface(ABC):
             full_name: Tên mới (optional)
             phone: SĐT mới (optional)
             avatar_url: Avatar URL (optional)
+            address_detail: Địa chỉ chi tiết (optional)
+            area_code: Mã khu vực (optional)
+            location: Tọa độ vị trí (optional)
+            fcm_token: FCM token (optional)
             
         Returns:
             User đã cập nhật
