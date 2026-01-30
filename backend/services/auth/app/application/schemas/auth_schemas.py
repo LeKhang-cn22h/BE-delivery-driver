@@ -147,6 +147,7 @@ class UserResponse(BaseModel):
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
     fcm_token: Optional[str] = None
+    post_office_id:Optional[str]=None
     
     @field_validator("location", mode="before")
     @classmethod

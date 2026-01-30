@@ -200,5 +200,6 @@ class AuthService:
         is_active=user.is_active,
         created_at=user.created_at,
         updated_at=user.updated_at,
-        fcm_token=user.fcm_token
+        fcm_token=user.fcm_token,
+        post_office_id=user.post_office_id
     )

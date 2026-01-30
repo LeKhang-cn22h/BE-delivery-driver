@@ -88,6 +88,30 @@ class OrderCreateDTO(BaseModel):
             raise ValueError('Đơn hàng phải có ít nhất 1 kiện hàng')
         return v
 
+class OrderResponseDTO(BaseModel):
+    id:str
+    status:str
+    user_id:str
+    pickup_point:Optional[str]
+    order_type:str
+    pickup_address:Optional[str]
+    pickup_area_code:Optional[str]
+    create_at:datetime
+    pickup_location: Optional[GeoPointDTO]= Field(None, description="Tọa độ lấy hàng")
+    pickup_phone:str
+    pickup_note:Optional[str]
+    pickup_status:Optional[str]
+    pickup_driver_id:Optional[str]
+    pickup_failure_reason:str
+    post_office_id:str
+    @field_validator("pickup_location", mode="before")
+    @classmethod
+    def parse_pickup_location(cls, v):
+        if v is None:
+            return None
+        if isinstance(v, str):
+            return GeoPointDTO.from_point_string(v)
+        return v
 
 class OrderDetailResponseDTO(BaseModel):
     """Response cho 1 kiện hàng"""

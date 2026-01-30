@@ -46,7 +46,8 @@ class SupabaseAuthRepository(AuthRepositoryInterface):
             is_active=user_row.get("is_active", True),
             created_at=user_row.get("created_at"),
             updated_at=user_row.get("updated_at"),
-            fcm_token=user_row.get("fcm_token")
+            fcm_token=user_row.get("fcm_token"),
+            post_office_id=user_row.get("post_office_id")
         )
     
     def _to_auth_result(self, auth_response, user_row: dict) -> AuthResult:

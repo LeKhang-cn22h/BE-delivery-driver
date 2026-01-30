@@ -44,10 +44,9 @@ class ScheduleItem(BaseModel):
     schedule_id: str
     order_detail_id: str
     status: str
-    queue: int  # ✅ SỬA 1: Đổi từ 'queue_number' sang 'queue'
+    queue: int  
     delivered_at: Optional[datetime] = None
     failure_reason: Optional[str] = None
-    # ✅ SỬA 2: Xóa 'created_at' (không tồn tại trong DB)
 
     class Config:
         from_attributes = True
