@@ -6,7 +6,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from services.http_client import HTTPClient
 
 router = APIRouter(
-    prefix="/api/approve-orders",  # ✅ ĐỔI PREFIX để tránh xung đột
+    prefix="/api/approve-orders",  
     tags=["Approve Order Processing"]
 )
 

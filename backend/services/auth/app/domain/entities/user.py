@@ -49,6 +49,7 @@ class User:
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
     fcm_token: Optional[str] = None
+    post_office_id:Optional[str]=None
     
     def get_display_name(self) -> str:
         """Business logic: Lấy tên hiển thị"""
