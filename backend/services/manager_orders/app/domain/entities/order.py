@@ -16,6 +16,11 @@ class OrderType(str, Enum):
     drop_off = "drop_off"
     pickup = "pickup"
 
+class PickupStatus(str,Enum):
+    pending="pending"
+    scheduled="scheduled"
+    picked="picked"
+    failed="failed"
 
 class DetailStatus(str, Enum):
     pending = "pending"
@@ -72,6 +77,7 @@ class Order:
     # Trạng thái và metadata
     status: OrderStatus
     order_type: OrderType
+    pickup_status:PickupStatus
     created_at: Optional[datetime]
 
     # Danh sách kiện hàng trong đơn
