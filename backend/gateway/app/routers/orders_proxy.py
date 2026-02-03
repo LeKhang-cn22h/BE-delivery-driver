@@ -125,6 +125,47 @@ async def cancel_order(
         headers=headers
     )
 
+# ================================
+# POST OFFICE ORDERS ENDPOINTS
+# ================================
+@router.get("/post-office/{post_office_id}/orders", summary="Lấy danh sách đơn hàng của bưu cục")
+async def get_post_office_orders(
+    post_office_id: str,
+    request: Request,
+    status: Optional[str] = Query(None, regex="^(pending|confirmed|processing|completed|cancelled)$"),
+    pickup_status: Optional[str] = Query(None, regex="^(pending|scheduled|picked|failed)$"),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(10, ge=1, le=100),
+):
+    """
+    Lấy đơn hàng của bưu cục với filter tùy chọn
+    
+    Query params:
+    - status: Lọc theo trạng thái đơn hàng (optional)
+    - pickup_status: Lọc theo trạng thái lấy hàng (optional)
+    - skip, limit: Phân trang
+    
+    Examples:
+    - GET /post-office/{id}/orders -> Tất cả đơn
+    - GET /post-office/{id}/orders?status=pending -> Đơn pending
+    - GET /post-office/{id}/orders?pickup_status=picked -> Đơn đã lấy
+    - GET /post-office/{id}/orders?status=confirmed&pickup_status=pending -> Kết hợp
+    """
+    headers = await get_user_headers(request)
+    
+    # Build params dynamically
+    params = {"skip": skip, "limit": limit}
+    if status:
+        params["status"] = status
+    if pickup_status:
+        params["pickup_status"] = pickup_status
+    
+    return await orders_client.request(
+        "GET",
+        f"/api/v1/orders/post-office/{post_office_id}/orders",
+        params=params,
+        headers=headers
+    )
 
 # ================================
 # UPDATE ORDER STATUS

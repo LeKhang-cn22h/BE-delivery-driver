@@ -3,7 +3,7 @@ from datetime import datetime
 
 from infrastructure.database.supabase_client import SupabaseClient
 from domain.repositories.order_repository import OrderRepository
-from domain.entities.order import Order, OrderStatus, OrderType
+from domain.entities.order import Order, OrderStatus, OrderType, PickupStatus
 
 
 class SupabaseOrderRepository(OrderRepository):
@@ -40,6 +40,7 @@ class SupabaseOrderRepository(OrderRepository):
             "pickup_phone": order.pickup_phone,
             "pickup_note": order.pickup_note,
             "status": order.status.value if isinstance(order.status, OrderStatus) else order.status,
+            "pickup_status":order.pickup_status if isinstance(order.pickup_status, PickupStatus) else order.pickup_status,
             "order_type": order.order_type.value if isinstance(order.order_type, OrderType) else order.order_type
         }
 
@@ -55,6 +56,7 @@ class SupabaseOrderRepository(OrderRepository):
             pickup_phone=data.get("pickup_phone"),
             pickup_note=data.get("pickup_note"),
             status=OrderStatus(data.get("status")),
+            pickup_status=PickupStatus(data.get("pickup_status")),
             order_type=OrderType(data.get("order_type")),
             created_at=datetime.fromisoformat(data.get("created_at").replace('Z', '+00:00'))
             if data.get("created_at") else None,
@@ -82,7 +84,60 @@ class SupabaseOrderRepository(OrderRepository):
             return None
 
         return self._from_dict(response.data[0])
+    
+    async def get_by_post(self, post_id: str, skip: int = 0, limit: int = 10) -> List[Order]:
+        response = (
+            self._table()
+            .select("*")
+            .eq("post_office_id", post_id)
+            .order("created_at", desc=True)
+            .range(skip, skip + limit - 1)
+            .execute()
+        )
 
+        return [self._from_dict(item) for item in response.data]
+    
+    async def get_by_status(self, post_id: str, status:str, skip: int = 0, limit: int = 10) -> List[Order]:
+        response = (
+            self._table()
+            .select("*")
+            .eq("post_office_id", post_id )
+            .eq("status", status)
+            .order("created_at", desc=True)
+            .range(skip, skip + limit - 1)
+            .execute()
+        )
+
+        return [self._from_dict(item) for item in response.data]
+
+
+    async def get_by_pickupstatus(self, post_id: str, pickupstatus:str, skip: int = 0, limit: int = 10) -> List[Order]:
+        response = (
+            self._table()
+            .select("*")
+            .eq("post_office_id", post_id )
+            .eq("pickup_status", pickupstatus)
+            .order("created_at", desc=True)
+            .range(skip, skip + limit - 1)
+            .execute()
+        )
+
+        return [self._from_dict(item) for item in response.data]
+    
+    async def get_by_statusPickupStatus(self, post_id: str, status:str,pickupStatus:str, skip: int = 0, limit: int = 10) -> List[Order]:
+        response = (
+            self._table()
+            .select("*")
+            .eq("post_office_id", post_id )
+            .eq("status", status)
+            .eq("pickup_status", pickupStatus)
+            .order("created_at", desc=True)
+            .range(skip, skip + limit - 1)
+            .execute()
+        )
+
+        return [self._from_dict(item) for item in response.data]
+    
     async def get_by_user_id(self, user_id: str, skip: int = 0, limit: int = 10) -> List[Order]:
         response = (
             self._table()
@@ -119,3 +174,19 @@ class SupabaseOrderRepository(OrderRepository):
             raise Exception("Không thể cập nhật đơn hàng")
 
         return self._from_dict(response.data[0])
+    
+    async def get_by_postid(self, post_id: str, skip: int = 0, limit: int = 10) -> List[Order]:
+        """Wrapper - gọi get_by_post"""
+        return await self.get_by_post(post_id, skip, limit)
+
+    async def get_by_post_status(self, post_id: str, status: str, skip: int = 0, limit: int = 10) -> List[Order]:
+        """Wrapper - gọi get_by_status"""
+        return await self.get_by_status(post_id, status, skip, limit)
+
+    async def get_by_pickupStatus(self, post_id: str, pickup_status: str, skip: int = 0, limit: int = 10) -> List[Order]:
+        """Wrapper - gọi get_by_pickupstatus"""
+        return await self.get_by_pickupstatus(post_id, pickup_status, skip, limit)
+
+    async def get_by_pickupStatus_status(self, post_id: str, status: str, pickup_status: str, skip: int = 0, limit: int = 10) -> List[Order]:
+        """Wrapper - gọi get_by_statusPickupStatus"""
+        return await self.get_by_statusPickupStatus(post_id, status, pickup_status, skip, limit)

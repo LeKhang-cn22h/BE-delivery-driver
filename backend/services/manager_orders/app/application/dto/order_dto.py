@@ -20,6 +20,12 @@ class OrderStatus(str, Enum):
     completed = "completed"
     cancelled = "cancelled"
 
+class PickupStatus(str,Enum):
+    pending="pending"
+    scheduled="scheduled"
+    picked="picked"
+    failed="failed"
+
 class GeoPointDTO(BaseModel):
     lat: float
     lng: float
@@ -68,7 +74,7 @@ class OrderCreateDTO(BaseModel):
     pickup_phone: str = Field(..., min_length=1, description="SĐT liên hệ lấy hàng")
     pickup_note: Optional[str] = Field(None, description="Ghi chú khi lấy hàng")
     order_type: str = Field(..., pattern='^(drop_off|pickup)$', description="Loại đơn")
-
+    pickup_status:Optional[str] =Field(None,description="trạng thái pickup")
 
     # Danh sách kiện hàng (tối thiểu 1 kiện)
     order_details: List[OrderDetailCreateDTO] = Field(..., min_items=1, description="Danh sách kiện hàng")
@@ -132,6 +138,7 @@ class OrderResponseDTO(BaseModel):
     id: str
     user_id: str
     post_office_id: str
+
     # Thông tin lấy hàng
     pickup_point: str
     pickup_address: str
@@ -143,6 +150,7 @@ class OrderResponseDTO(BaseModel):
     status: OrderStatus
     order_type: str
     created_at: datetime
+    pickup_status:PickupStatus
 
     # Thống kê kiện hàng
     total_packages: int
@@ -162,6 +170,7 @@ class OrderSummaryDTO(BaseModel):
     pickup_point: str
     status: OrderStatus
     created_at: datetime
+    pickup_status:PickupStatus
     total_packages: int
 
     class Config:

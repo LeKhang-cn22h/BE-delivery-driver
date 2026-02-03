@@ -1,8 +1,7 @@
-# app/application/use_cases/get_order.py
 from domain.entities.order import Order
 from domain.repositories.order_detail_repository import OrderDetailRepository
 from domain.repositories.order_repository import OrderRepository
-
+from typing import List
 
 class GetOrderUseCase:
     """
@@ -28,3 +27,19 @@ class GetOrderUseCase:
         order.order_details = order_details
 
         return order
+    
+    async def getbyPost(self, post_id: str, skip: int = 0, limit: int = 10) -> List[Order]:
+        """Lấy đơn hàng theo post office"""
+        return await self.order_repository.get_by_postid(post_id, skip, limit)
+
+    async def getbyStatus(self, post_id: str, status: str, skip: int = 0, limit: int = 10) -> List[Order]:
+        """Lấy đơn hàng theo status"""
+        return await self.order_repository.get_by_post_status(post_id, status, skip, limit)
+
+    async def getbyPickupStatus(self, post_id: str, pickup_status: str, skip: int = 0, limit: int = 10) -> List[Order]:
+        """Lấy đơn hàng theo pickup status"""
+        return await self.order_repository.get_by_pickupStatus(post_id, pickup_status, skip, limit)
+
+    async def getbyStatusPickStatus(self, post_id: str, status: str, pickup_status: str, skip: int = 0, limit: int = 10) -> List[Order]:
+        """Lấy đơn hàng theo cả status và pickup status"""
+        return await self.order_repository.get_by_pickupStatus_status(post_id, status, pickup_status, skip, limit)

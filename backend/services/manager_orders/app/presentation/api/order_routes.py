@@ -1,5 +1,5 @@
-from fastapi import APIRouter, HTTPException, Depends, status, Query
-from typing import List
+from fastapi import APIRouter, HTTPException, Depends, status, Query,Path
+from typing import List,Optional
 from pydantic import BaseModel
 
 from application.use_cases.create_order import CreateOrderUseCase
@@ -206,6 +206,61 @@ async def get_order(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
+@order_router.get("/post-office/{post_office_id}/orders", response_model=List[OrderSummaryDTO])
+async def get_post_office_orders(
+        post_office_id: str,
+        status: Optional[str] = Query(None, regex="^(pending|confirmed|processing|completed|cancelled)$"),
+        pickup_status: Optional[str] = Query(None, regex="^(pending|scheduled|picked|failed)$"),
+        skip: int = Query(0, ge=0),
+        limit: int = Query(10, ge=1, le=100),
+        use_case: GetOrderUseCase = Depends(get_get_order_use_case)
+):
+    """
+    Lấy danh sách đơn hàng của bưu cục với các filter tùy chọn
+    
+    Hỗ trợ các query params:
+    - status: Lọc theo trạng thái đơn hàng
+    - pickup_status: Lọc theo trạng thái lấy hàng
+    - Có thể kết hợp cả 2
+    - Nếu không truyền filter nào -> lấy tất cả
+    
+    Examples:
+    GET /post-office/xxx/orders
+    GET /post-office/xxx/orders?status=pending
+    GET /post-office/xxx/orders?pickup_status=picked
+    GET /post-office/xxx/orders?status=confirmed&pickup_status=pending
+    """
+    try:
+        # Xử lý logic dựa trên params
+        if status and pickup_status:
+            # Lọc theo cả 2
+            orders = await use_case.getbyStatusPickStatus(post_office_id, status, pickup_status)
+        elif status:
+            # Chỉ lọc theo status
+            orders = await use_case.getbyStatus(post_office_id, status)
+        elif pickup_status:
+            # Chỉ lọc theo pickup_status
+            orders = await use_case.getbyPickupStatus(post_office_id, pickup_status)
+        else:
+            # Không filter, lấy tất cả
+            orders = await use_case.getbyPost(post_office_id)
+        
+        return [
+            OrderSummaryDTO(
+                id=order.id,
+                pickup_point=order.pickup_point,
+                status=order.status,
+                created_at=order.created_at,
+                pickup_status=order.pickup_status,
+                total_packages=order.get_total_packages()
+            )
+            for order in orders
+        ]
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @order_router.get("/customer/{user_id}", response_model=List[OrderSummaryDTO])
 async def list_customer_orders(
