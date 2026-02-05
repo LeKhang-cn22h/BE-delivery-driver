@@ -19,7 +19,7 @@ sys.stderr.reconfigure(encoding="utf-8")
 from middleware.auth_middleware import AuthMiddleware, RoleCheckMiddleware
 
 # Import routers
-from routers import auth_proxy, receive_orders_proxy, routing_proxy, orders_proxy, tracking_proxy, approve_order_gateway, driver_scheduling_gateway, notification_proxy
+from routers import auth_proxy, receive_orders_proxy, routing_proxy, orders_proxy, tracking_proxy, approve_order_gateway, driver_scheduling_gateway, notification_proxy, pickup_schedule_gateway
 
 # Configure logging
 logging.basicConfig(
@@ -134,6 +134,11 @@ app.include_router(
     notification_proxy.router,
     prefix="/api/v1",
     tags=["Notifications"]
+)
+
+app.include_router(
+    pickup_schedule_gateway.router,
+    tags=["pickup schedule"]
 )
 
 # from routers import transport_proxy
