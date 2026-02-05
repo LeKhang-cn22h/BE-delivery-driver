@@ -40,7 +40,9 @@ class SupabaseOrderRepository(OrderRepository):
             "pickup_phone": order.pickup_phone,
             "pickup_note": order.pickup_note,
             "status": order.status.value if isinstance(order.status, OrderStatus) else order.status,
-            "pickup_status":order.pickup_status if isinstance(order.pickup_status, PickupStatus) else order.pickup_status,
+            "pickup_status": order.pickup_status.value if isinstance(order.pickup_status,
+                                                                     PickupStatus) else order.pickup_status,
+            # ← Thêm .value
             "order_type": order.order_type.value if isinstance(order.order_type, OrderType) else order.order_type
         }
 

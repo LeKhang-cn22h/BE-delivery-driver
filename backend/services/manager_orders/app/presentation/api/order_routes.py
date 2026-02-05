@@ -1,6 +1,8 @@
-from fastapi import APIRouter, HTTPException, Depends, status, Query,Path, Request
+from fastapi import APIRouter, HTTPException, Depends, status, Query,Path,Request
 from typing import List,Optional
 from pydantic import BaseModel
+import logging
+import os
 
 from application.use_cases.create_order import CreateOrderUseCase
 from application.use_cases.get_order import GetOrderUseCase
@@ -11,12 +13,21 @@ from application.dto.order_dto import (
     OrderCreateDTO,
     OrderResponseDTO,
     OrderSummaryDTO,
-    OrderDetailResponseDTO
+    OrderDetailResponseDTO,
+    PickupStatus
 )
 from domain.entities.order import OrderDetail, DetailStatus, OrderType, Order
 from infrastructure.database.supabase_order_detail_repository import SupabaseOrderDetailRepository
 from infrastructure.database.supabase_order_repository import SupabaseOrderRepository
 from infrastructure.database.supabase_client import SupabaseClient
+
+# ============= THAY ĐỔI Ở ĐÂY =============
+from infrastructure.events.kafka_event_publisher import KafkaEventPublisher
+
+# from infrastructure.events.simple_event_publisher import SimpleEventPublisher  # Comment lại
+# ==========================================
+
+logger = logging.getLogger(__name__)
 
 # ============================================================================
 # ORDERS ROUTER
@@ -24,6 +35,34 @@ from infrastructure.database.supabase_client import SupabaseClient
 
 order_router = APIRouter(prefix="/api/v1/orders", tags=["orders"])
 
+# ============= SINGLETON EVENT PUBLISHER =============
+_event_publisher_instance = None
+
+
+async def get_event_publisher():
+    """
+    Singleton dependency cho Kafka Event Publisher
+    Tự động khởi tạo và start producer lần đầu tiên được gọi
+    """
+    global _event_publisher_instance
+
+    if _event_publisher_instance is None:
+        # Lấy bootstrap servers từ environment variable
+        # Trong Docker: kafka:9093
+        # Local: localhost:9092
+        bootstrap_servers = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "kafka:9093")
+
+        logger.info(f"Initializing Kafka Event Publisher: {bootstrap_servers}")
+
+        _event_publisher_instance = KafkaEventPublisher(bootstrap_servers)
+        await _event_publisher_instance.start()
+
+        logger.info("✅ Kafka Event Publisher initialized and started")
+
+    return _event_publisher_instance
+
+
+# =====================================================
 
 # Dependency injection
 def get_order_repository():
@@ -36,9 +75,10 @@ def get_order_detail_repository():
 
 def get_create_order_use_case(
         order_repo=Depends(get_order_repository),
-        detail_repo=Depends(get_order_detail_repository)
+        detail_repo=Depends(get_order_detail_repository),
+        event_publisher=Depends(get_event_publisher)  # ← Async dependency
 ):
-    return CreateOrderUseCase(order_repo, detail_repo)
+    return CreateOrderUseCase(order_repo, detail_repo, event_publisher)
 
 
 def get_get_order_use_case(
@@ -110,6 +150,7 @@ async def create_order(
             pickup_note=order_data.pickup_note,
             status=None,  # Will be set in use case
             order_type=OrderType(order_data.order_type),
+            pickup_status=PickupStatus.pending,
             created_at=None,
             order_details=order_details
         )
@@ -191,7 +232,7 @@ async def get_post_office_orders(
         else:
             # Không filter, lấy tất cả
             orders = await use_case.getbyPost(post_office_id)
-        
+
         return [
             OrderSummaryDTO(
                 id=order.id,
@@ -249,19 +290,19 @@ async def get_order(
     """Xem chi tiết đơn hàng"""
     print(f"📥 Order Service received order_id: {order_id}")
     print(f"📏 Order ID length: {len(order_id)}")
-    
+
     try:
         # Step 1: Get order from use case
         print(f"🔍 [Router] Step 1: Calling use_case.execute")
         order = await use_case.execute(order_id)
         print(f"✅ [Router] Step 1 SUCCESS - Order: {order.id}")
-        
+
         # Step 2: Check order details
         print(f"📊 [Router] Step 2: Checking order details")
         print(f"   - Total details: {len(order.order_details)}")
         print(f"   - Status type: {type(order.status)}")
         print(f"   - Status value: {order.status}")
-        
+
         # Step 3: Map order details
         print(f"🔍 [Router] Step 3: Mapping order details")
         mapped_details = []
@@ -284,9 +325,9 @@ async def get_order(
             except Exception as e:
                 print(f"   ❌ Error mapping detail {idx}: {str(e)}")
                 raise
-        
+
         print(f"✅ [Router] Step 3 SUCCESS - Mapped {len(mapped_details)} details")
-        
+
         # Step 4: Create response DTO
         print(f"🔍 [Router] Step 4: Creating OrderResponseDTO")
         try:
@@ -317,11 +358,11 @@ async def get_order(
             import traceback
             traceback.print_exc()
             raise
-        
+
         # Step 5: Return response
         print(f"🔍 [Router] Step 5: Returning response")
         return response_dto
-        
+
     except ValueError as e:
         print(f"❌ [Router] ValueError: {str(e)}")
         raise HTTPException(status_code=404, detail=str(e))
@@ -402,7 +443,7 @@ async def process_order(
 ):
     """
     Xử lý đơn hàng (dành cho manager/admin)
-    
+
     Actions:
     - approve: Duyệt đơn -> chuyển sang confirmed
     - reject: Từ chối -> chuyển sang cancelled
@@ -418,11 +459,11 @@ async def process_order(
                 "new_status": "confirmed",
                 "note": note
             }
-            
+
         elif action == "reject":
             if not reject_reason:
                 raise ValueError("Vui lòng cung cấp lý do từ chối")
-            
+
             # Từ chối đơn
             success = await use_case.execute(order_id, "cancelled")
             return {
@@ -432,7 +473,7 @@ async def process_order(
                 "reason": reject_reason,
                 "note": note
             }
-            
+
         elif action == "request_edit":
             # Yêu cầu chỉnh sửa (có thể gửi notification cho khách)
             return {
@@ -441,7 +482,7 @@ async def process_order(
                 "new_status": "pending",
                 "note": note
             }
-            
+
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -459,16 +500,16 @@ async def edit_order_info(
     """
     try:
         body = await request.json()
-        
+
         # TODO: Implement logic update order info
         # Hiện tại chỉ return success, bạn cần implement logic update vào DB
-        
+
         return {
             "success": True,
             "message": "Đã cập nhật thông tin đơn hàng",
             "updated_fields": list(body.keys())
         }
-        
+
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:

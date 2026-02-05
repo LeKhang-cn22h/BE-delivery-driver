@@ -33,10 +33,7 @@ class DetailStatus(str, Enum):
 
 @dataclass
 class OrderDetail:
-    """
-    Mỗi OrderDetail = 1 kiện hàng với địa chỉ giao riêng
-    Ví dụ: Khách gửi 3 kiện đến 3 địa chỉ khác nhau = 3 order_details
-    """
+
     id: Optional[str]
     order_id: Optional[str]
     start_point: str  # Địa chỉ giao hàng (người nhận)
@@ -56,6 +53,19 @@ class OrderDetail:
         if not self.area_code:
             raise ValueError("Mã khu vực là bắt buộc")
 
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "order_id": self.order_id,
+            "start_point": self.start_point,
+            "address_detail": self.address_detail,
+            "area_code": self.area_code,
+            "location": self.location,
+            "status": self.status.value,
+            "priority_score": self.priority_score,
+            "note_send": self.note_send,
+            "recipient_id": self.recipient_id,
+        }
 
 @dataclass
 class Order:
@@ -76,6 +86,7 @@ class Order:
 
     # Trạng thái và metadata
     status: OrderStatus
+
     order_type: OrderType
     pickup_status:PickupStatus
     created_at: Optional[datetime]
@@ -124,3 +135,16 @@ class Order:
     def get_unique_delivery_areas(self) -> List[str]:
         """Lấy danh sách khu vực giao hàng (không trùng)"""
         return list(set(detail.area_code for detail in self.order_details))
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "user_id": self.user_id,
+            "status": self.status.value,
+            "pickup_address": self.pickup_address,
+            "pickup_area_code": self.pickup_area_code,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "order_details": [
+                d.to_dict() for d in self.order_details
+            ]
+        }

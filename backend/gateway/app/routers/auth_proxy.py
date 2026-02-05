@@ -207,3 +207,7 @@ async def reset_password(request: Request):
     """
     body = await request.json()
     return await auth_client.post("/api/v1/auth/reset-password", body)
+
+@router.options("/{path:path}")
+async def auth_options_handler(path: str):
+    return {}
