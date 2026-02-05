@@ -10,7 +10,7 @@ pydantic-settings
 # Supabase Client
 supabase
 postgrest
-
+aiokafka
 # Environment variables
 python-dotenv
 

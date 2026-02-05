@@ -1,7 +1,4 @@
-"""
-Auth Middleware cho API Gateway - Hệ thống Vận tải
-Verify JWT token trước khi forward request đến services
-"""
+
 
 from fastapi import Request, HTTPException, status
 from fastapi.responses import JSONResponse
@@ -14,16 +11,7 @@ from typing import Set, Optional
 logger = logging.getLogger(__name__)
 
 class AuthMiddleware(BaseHTTPMiddleware):
-    """
-    Middleware xác thực JWT token
-    
-    Flow:
-    1. Check xem route có cần authentication không
-    2. Nếu cần -> Extract và verify token
-    3. Add user info vào request headers
-    4. Forward đến backend service
-    """
-    
+
     # ===== WHITELIST - Routes KHÔNG cần authentication =====
     PUBLIC_PATHS: Set[str] = {
         # System endpoints
@@ -38,6 +26,9 @@ class AuthMiddleware(BaseHTTPMiddleware):
         "/api/v1/auth/login",
         "/api/v1/auth/refresh",
         "/api/v1/auth/reset-password",
+        "/api/data/route-analysis",  # ← Add
+        "/api/data/area-stats",  # ← Add
+        "/api/data/health",
     }
     
     def __init__(self, app, auth_service_url: Optional[str] = None):
@@ -50,73 +41,98 @@ class AuthMiddleware(BaseHTTPMiddleware):
         
         logger.info(f" Auth Middleware initialized with Auth Service: {self.auth_service_url}")
     
+    # async def dispatch(self, request: Request, call_next):
+    #     """
+    #     Main middleware logic - intercept mọi request
+    #     """
+    #     path = request.url.path
+    #     method = request.method
+    #
+    #     # Log request
+    #     logger.info(f"→ {method} {path} from {request.client.host if request.client else 'unknown'}")
+    #
+    #     # ===== 1. CHECK PUBLIC ROUTES =====
+    #     if self._is_public_route(path):
+    #         logger.debug(f" Public route: {path} - skipping auth")
+    #         return await call_next(request)
+    #
+    #     # ===== 2. EXTRACT TOKEN =====
+    #     token = self._extract_token(request)
+    #
+    #     if not token:
+    #         logger.warning(f" Missing token for protected route: {path}")
+    #         return self._unauthorized_response(
+    #             detail="Missing Authorization header",
+    #             hint="Use: Authorization: Bearer <token>"
+    #         )
+    #
+    #     # ===== 3. VERIFY TOKEN =====
+    #     user_info = await self._verify_token(token)
+    #
+    #     if not user_info:
+    #         logger.warning(f" Invalid token for route: {path}")
+    #         return self._unauthorized_response(
+    #             detail="Invalid or expired token"
+    #         )
+    #
+    #     # ===== 4. ADD USER INFO TO REQUEST =====
+    #     # Backend services có thể access qua request.state hoặc headers
+    #     request.state.user_id = user_info["user_id"]
+    #     request.state.user_email = user_info.get("email", "")
+    #     request.state.user_role = user_info.get("role", "user")
+    #
+    #     logger.info(
+    #         f"✓ Authenticated: {user_info.get('email')} "
+    #         f"(Role: {user_info.get('role', 'user')})"
+    #     )
+    #
+    #     # ===== 5. CONTINUE TO ROUTE =====
+    #     response = await call_next(request)
+    #
+    #     # Log response
+    #     logger.info(f"← {method} {path} Status: {response.status_code}")
+    #
+    #     return response
+    #
     async def dispatch(self, request: Request, call_next):
-        """
-        Main middleware logic - intercept mọi request
-        """
         path = request.url.path
         method = request.method
-        
-        # Log request
-        logger.info(f"→ {method} {path} from {request.client.host if request.client else 'unknown'}")
-        
+
+        # ===== 0. SKIP CORS PREFLIGHT =====
+        if method == "OPTIONS":
+            return await call_next(request)
+
         # ===== 1. CHECK PUBLIC ROUTES =====
         if self._is_public_route(path):
-            logger.debug(f" Public route: {path} - skipping auth")
             return await call_next(request)
-        
-        # ===== 2. EXTRACT TOKEN =====
+
+        # ===== 2. AUTH LOGIC =====
         token = self._extract_token(request)
-        
         if not token:
-            logger.warning(f" Missing token for protected route: {path}")
             return self._unauthorized_response(
                 detail="Missing Authorization header",
                 hint="Use: Authorization: Bearer <token>"
             )
-        
-        # ===== 3. VERIFY TOKEN =====
+
         user_info = await self._verify_token(token)
-        
         if not user_info:
-            logger.warning(f" Invalid token for route: {path}")
             return self._unauthorized_response(
                 detail="Invalid or expired token"
             )
-        
-        # ===== 4. ADD USER INFO TO REQUEST =====
-        # Backend services có thể access qua request.state hoặc headers
+
         request.state.user_id = user_info["user_id"]
         request.state.user_email = user_info.get("email", "")
         request.state.user_role = user_info.get("role", "user")
-        
-        logger.info(
-            f"✓ Authenticated: {user_info.get('email')} "
-            f"(Role: {user_info.get('role', 'user')})"
-        )
-        
-        # ===== 5. CONTINUE TO ROUTE =====
-        response = await call_next(request)
-        
-        # Log response
-        logger.info(f"← {method} {path} Status: {response.status_code}")
-        
-        return response
-    
+
+        return await call_next(request)
+
     def _is_public_route(self, path: str) -> bool:
-        """
-        Check xem route có cần authentication không
-        
-        Returns:
-            True: Public route (không cần token)
-            False: Protected route (cần token)
-        """
         # Exact match
         if path in self.PUBLIC_PATHS:
             return True
         
         # Prefix match (cho static files, etc)
-        public_prefixes = ["/static", "/assets"]
+        public_prefixes = ["/static", "/assets","/api/data/",]
         for prefix in public_prefixes:
             if path.startswith(prefix):
                 return True
@@ -124,15 +140,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
         return False
     
     def _extract_token(self, request: Request) -> Optional[str]:
-        """
-        Extract JWT token từ Authorization header
-        
-        Expected format: Authorization: Bearer <token>
-        
-        Returns:
-            str: Token nếu có
-            None: Nếu không có hoặc format sai
-        """
+
         auth_header = request.headers.get("Authorization")
         
         if not auth_header:

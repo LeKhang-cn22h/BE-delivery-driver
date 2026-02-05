@@ -23,46 +23,14 @@ scheduling_client = HTTPClient(APPROVE_ORDER_SERVICE_URL)
 
 @router.post("/schedule", summary="Xếp lịch tài xế với GA")
 async def create_driver_schedule(request: Request):
-    """
-    Tạo lịch làm việc cho tài xế sử dụng thuật toán Genetic Algorithm
 
-    Body example:
-    {
-      "scheduled_date": "2026-01-29",
-      "area_codes": ["HCMQ12"],
-      "post_office_id": "uuid",
-      "shift_configs": [
-        {
-          "shift_name": "Ca sáng",
-          "start_time": "07:00:00",
-          "end_time": "12:00:00",
-          "max_orders_per_driver": 15,
-          "max_distance_km": 40.0
-        }
-      ],
-      "population_size": 50,
-      "generations": 100,
-      "mutation_rate": 0.1,
-      "crossover_rate": 0.8,
-      "elite_size": 5
-    }
-    """
     body = await request.json()
     return await scheduling_client.post("/api/v1/driver-scheduling/schedule", body)
 
 
 @router.post("/schedule/quick", summary="Xếp lịch nhanh")
 async def quick_schedule(request: Request):
-    """
-    Xếp lịch nhanh với cấu hình mặc định
 
-    Body example:
-    {
-      "scheduled_date": "2026-01-29",
-      "area_codes": ["HCMQ12"],
-      "post_office_id": "uuid"
-    }
-    """
     body = await request.json()
     return await scheduling_client.post("/api/v1/driver-scheduling/schedule/quick", body)
 

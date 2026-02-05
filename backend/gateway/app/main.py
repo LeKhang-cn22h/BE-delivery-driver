@@ -19,7 +19,7 @@ sys.stderr.reconfigure(encoding="utf-8")
 from middleware.auth_middleware import AuthMiddleware, RoleCheckMiddleware
 
 # Import routers
-from routers import auth_proxy, receive_orders_proxy, routing_proxy, orders_proxy, tracking_proxy, approve_order_gateway, driver_scheduling_gateway, notification_proxy
+from routers import auth_proxy, receive_orders_proxy, routing_proxy, orders_proxy, tracking_proxy, approve_order_gateway, driver_scheduling_gateway, notification_proxy,data_proxy_gateway
 
 # Configure logging
 logging.basicConfig(
@@ -67,19 +67,33 @@ app = FastAPI(
 
 # ===== AUTH MIDDLEWARE =====
 # Verify JWT token cho protected routes
-
-app.add_middleware(
-    AuthMiddleware,
-    auth_service_url=os.getenv("AUTH_SERVICE_URL", "http://auth_service:7000")
-)
-# ===== CORS MIDDLEWARE =====
-
+#
+# app.add_middleware(
+#     AuthMiddleware,
+#     auth_service_url=os.getenv("AUTH_SERVICE_URL", "http://auth_service:7000")
+# )
+# # ===== CORS MIDDLEWARE =====
+#
+# app.add_middleware(
+#     CORSMiddleware,
+#     allow_origins=os.getenv("CORS_ORIGINS", "*").split(","),
+#     allow_credentials=True,
+#     allow_methods=["*"],
+#     allow_headers=["*"],
+# )
+# ===== CORS MIDDLEWARE (PHẢI ĐỨNG TRƯỚC) =====
 app.add_middleware(
     CORSMiddleware,
     allow_origins=os.getenv("CORS_ORIGINS", "*").split(","),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+)
+
+# ===== AUTH MIDDLEWARE =====
+app.add_middleware(
+    AuthMiddleware,
+    auth_service_url=os.getenv("AUTH_SERVICE_URL", "http://auth_service:7000")
 )
 
 
@@ -96,6 +110,7 @@ ROLE_REQUIREMENTS = {
     # Chỉ drivers mới có thể update delivery status
     "/api/v1/orders/*/pickup": ["driver"],
     "/api/v1/orders/*/deliver": ["driver"],
+
 }
 # Auth router - Public + Protected endpoints
 app.include_router(
@@ -106,6 +121,10 @@ app.include_router(
 # Orders router - Protected endpoints
 app.include_router(
     receive_orders_proxy.router,
+    tags=[" Orders Management"]
+)
+app.include_router(
+    data_proxy_gateway.router,
     tags=[" Orders Management"]
 )
 app.include_router(

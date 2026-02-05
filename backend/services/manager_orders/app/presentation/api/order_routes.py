@@ -1,6 +1,8 @@
-from fastapi import APIRouter, HTTPException, Depends, status, Query,Path
-from typing import List,Optional
+from fastapi import APIRouter, HTTPException, Depends, status, Query, Path
+from typing import List, Optional
 from pydantic import BaseModel
+import logging
+import os
 
 from application.use_cases.create_order import CreateOrderUseCase
 from application.use_cases.get_order import GetOrderUseCase
@@ -11,12 +13,21 @@ from application.dto.order_dto import (
     OrderCreateDTO,
     OrderResponseDTO,
     OrderSummaryDTO,
-    OrderDetailResponseDTO
+    OrderDetailResponseDTO,
+    PickupStatus
 )
 from domain.entities.order import OrderDetail, DetailStatus, OrderType, Order
 from infrastructure.database.supabase_order_detail_repository import SupabaseOrderDetailRepository
 from infrastructure.database.supabase_order_repository import SupabaseOrderRepository
 from infrastructure.database.supabase_client import SupabaseClient
+
+# ============= THAY ĐỔI Ở ĐÂY =============
+from infrastructure.events.kafka_event_publisher import KafkaEventPublisher
+
+# from infrastructure.events.simple_event_publisher import SimpleEventPublisher  # Comment lại
+# ==========================================
+
+logger = logging.getLogger(__name__)
 
 # ============================================================================
 # ORDERS ROUTER
@@ -24,6 +35,34 @@ from infrastructure.database.supabase_client import SupabaseClient
 
 order_router = APIRouter(prefix="/api/v1/orders", tags=["orders"])
 
+# ============= SINGLETON EVENT PUBLISHER =============
+_event_publisher_instance = None
+
+
+async def get_event_publisher():
+    """
+    Singleton dependency cho Kafka Event Publisher
+    Tự động khởi tạo và start producer lần đầu tiên được gọi
+    """
+    global _event_publisher_instance
+
+    if _event_publisher_instance is None:
+        # Lấy bootstrap servers từ environment variable
+        # Trong Docker: kafka:9093
+        # Local: localhost:9092
+        bootstrap_servers = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "kafka:9093")
+
+        logger.info(f"Initializing Kafka Event Publisher: {bootstrap_servers}")
+
+        _event_publisher_instance = KafkaEventPublisher(bootstrap_servers)
+        await _event_publisher_instance.start()
+
+        logger.info("✅ Kafka Event Publisher initialized and started")
+
+    return _event_publisher_instance
+
+
+# =====================================================
 
 # Dependency injection
 def get_order_repository():
@@ -36,9 +75,10 @@ def get_order_detail_repository():
 
 def get_create_order_use_case(
         order_repo=Depends(get_order_repository),
-        detail_repo=Depends(get_order_detail_repository)
+        detail_repo=Depends(get_order_detail_repository),
+        event_publisher=Depends(get_event_publisher)  # ← Async dependency
 ):
-    return CreateOrderUseCase(order_repo, detail_repo)
+    return CreateOrderUseCase(order_repo, detail_repo, event_publisher)
 
 
 def get_get_order_use_case(
@@ -110,6 +150,7 @@ async def create_order(
             pickup_note=order_data.pickup_note,
             status=None,  # Will be set in use case
             order_type=OrderType(order_data.order_type),
+            pickup_status=PickupStatus.pending,
             created_at=None,
             order_details=order_details
         )
@@ -127,6 +168,7 @@ async def create_order(
             pickup_note=created_order.pickup_note,
             status=created_order.status.value,
             order_type=created_order.order_type.value,
+            pickup_status=created_order.pickup_status.value,
             created_at=created_order.created_at,
             total_packages=created_order.get_total_packages(),
             delivered_packages=created_order.get_delivered_packages(),
@@ -218,13 +260,13 @@ async def get_post_office_orders(
 ):
     """
     Lấy danh sách đơn hàng của bưu cục với các filter tùy chọn
-    
+
     Hỗ trợ các query params:
     - status: Lọc theo trạng thái đơn hàng
     - pickup_status: Lọc theo trạng thái lấy hàng
     - Có thể kết hợp cả 2
     - Nếu không truyền filter nào -> lấy tất cả
-    
+
     Examples:
     GET /post-office/xxx/orders
     GET /post-office/xxx/orders?status=pending
@@ -245,7 +287,7 @@ async def get_post_office_orders(
         else:
             # Không filter, lấy tất cả
             orders = await use_case.getbyPost(post_office_id)
-        
+
         return [
             OrderSummaryDTO(
                 id=order.id,
@@ -261,6 +303,7 @@ async def get_post_office_orders(
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @order_router.get("/customer/{user_id}", response_model=List[OrderSummaryDTO])
 async def list_customer_orders(
