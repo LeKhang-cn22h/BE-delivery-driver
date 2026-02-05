@@ -86,6 +86,7 @@ class Order:
 
     # Trạng thái và metadata
     status: OrderStatus
+
     order_type: OrderType
     pickup_status:PickupStatus
     created_at: Optional[datetime]
