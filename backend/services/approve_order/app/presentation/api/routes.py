@@ -311,3 +311,32 @@ async def get_schedule_items(
             status_code=500,
             detail=f"Lỗi khi lấy schedule items: {str(e)}"
         )
+    
+@router.get("/api/schedules")
+async def list_schedules(
+    post_office_id: Optional[str] = None,
+    scheduled_date: Optional[str] = None,
+    status: Optional[str] = None,
+):
+    # Query từ schedule_repository
+    pass
+
+@router.get("/api/schedules/{schedule_id}")
+async def get_schedule(schedule_id: str):
+    # Get từ schedule_repository
+    pass
+
+@router.patch("/api/schedules/{schedule_id}/assign-driver")
+async def assign_driver(schedule_id: str, body: dict):
+    # Gọi schedule_repository.assign_driver()
+    pass
+
+@router.patch("/api/schedules/{schedule_id}/status")
+async def update_status(schedule_id: str, body: dict):
+    # Gọi schedule_repository.update_schedule_status()
+    pass
+
+@router.get("/api/schedules/{schedule_id}/items")
+async def get_items(schedule_id: str):
+    # Gọi schedule_item_repository.get_items_by_schedule()
+    pass

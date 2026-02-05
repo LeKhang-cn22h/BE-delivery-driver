@@ -17,7 +17,7 @@ class OrderRepository(IOrderRepository):
         self.db = supabase_client
         self.schema = schema
 
-    async def get_pending_order_details_by_post_office(  # ✅ Đổi tên method cho khớp
+    async def get_pending_order_details_by_post_office(  
             self,
             post_office_id: str
     ) -> List[OrderDetail]:
@@ -36,11 +36,11 @@ class OrderRepository(IOrderRepository):
                 """)
                 .eq("status", "pending")
                 .eq("orders.post_office_id", post_office_id)
-                .order("priority_score", desc=True)  # ✅ Thêm sắp xếp theo priority_score
+                .order("priority_score", desc=True)  # Thêm sắp xếp theo priority_score
                 .execute()
             )
 
-            # ✅ Transform để lấy area_code từ orders
+            # Transform để lấy area_code từ orders
             order_details = []
             for item in response.data:
                 od = OrderDetail(**{
@@ -53,7 +53,7 @@ class OrderRepository(IOrderRepository):
         except Exception as e:
             raise Exception(f"Lỗi khi lấy pending orders: {str(e)}")
 
-    async def get_pending_order_details_by_area(  # ✅ Đổi tên method cho khớp
+    async def get_pending_order_details_by_area(  #  Đổi tên method cho khớp
             self,
             post_office_id: str,
             area_code: str
@@ -73,12 +73,12 @@ class OrderRepository(IOrderRepository):
                 """)
                 .eq("status", "pending")
                 .eq("orders.post_office_id", post_office_id)
-                .eq("orders.pickup_area_code", area_code)  # ✅ Filter theo pickup_area_code trong orders
-                .order("priority_score", desc=True)  # ✅ Thêm sắp xếp theo priority_score
+                .eq("orders.pickup_area_code", area_code)  # Filter theo pickup_area_code trong orders
+                .order("priority_score", desc=True)  # Thêm sắp xếp theo priority_score
                 .execute()
             )
 
-            # ✅ Transform để lấy area_code từ orders
+            # Transform để lấy area_code từ orders
             order_details = []
             for item in response.data:
                 od = OrderDetail(**{
@@ -91,18 +91,18 @@ class OrderRepository(IOrderRepository):
         except Exception as e:
             raise Exception(f"Lỗi khi lấy orders theo vùng: {str(e)}")
 
-    async def update_order_details_status(  # ✅ Đổi tên method và logic
+    async def update_order_details_status(  # Đổi tên method và logic
             self,
-            order_detail_ids: List[str],  # ✅ Nhận list IDs
+            order_detail_ids: List[str],  # Nhận list IDs
             status: str
-    ) -> int:  # ✅ Trả về số lượng đã update
+    ) -> int:  # Trả về số lượng đã update
         """Cập nhật status của nhiều order details"""
         try:
             response = (
                 self.db.schema(self.schema)
                 .table("order_details")
                 .update({"status": status})
-                .in_("id", order_detail_ids)  # ✅ Dùng .in_() để update nhiều
+                .in_("id", order_detail_ids)  # Dùng .in_() để update nhiều
                 .execute()
             )
             return len(response.data)
@@ -258,7 +258,7 @@ class ScheduleItemRepository(IScheduleItemRepository):
                 .table("schedule_items")
                 .select("*")
                 .eq("schedule_id", schedule_id)
-                .order("queue_number")  # ✅ Đổi từ "queue" thành "queue_number"
+                .order("queue_number")  # Đổi từ "queue" thành "queue_number"
                 .execute()
             )
 
@@ -272,9 +272,9 @@ class ScheduleItemRepository(IScheduleItemRepository):
             response = (
                 self.db.schema(self.schema)
                 .table("schedule_items")
-                .select("queue_number")  # ✅ Đổi từ "queue" thành "queue_number"
+                .select("queue_number")  # Đổi từ "queue" thành "queue_number"
                 .eq("schedule_id", schedule_id)
-                .order("queue_number", desc=True)  # ✅ Đổi từ "queue" thành "queue_number"
+                .order("queue_number", desc=True)  # Đổi từ "queue" thành "queue_number"
                 .limit(1)
                 .execute()
             )
@@ -282,6 +282,6 @@ class ScheduleItemRepository(IScheduleItemRepository):
             if not response.data:
                 return 0
 
-            return response.data[0]["queue_number"]  # ✅ Đổi từ "queue" thành "queue_number"
+            return response.data[0]["queue_number"]  # Đổi từ "queue" thành "queue_number"
         except Exception as e:
             return 0
