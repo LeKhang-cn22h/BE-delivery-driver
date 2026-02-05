@@ -74,7 +74,7 @@ async def list_schedules(
     
     return await schedules_client.request(
         "GET",
-        "/api/schedules",
+        "/api/orders/schedules",
         params=params,
         headers=headers
     )
@@ -90,7 +90,7 @@ async def get_schedule_detail(schedule_id: str, request: Request):
     
     return await schedules_client.request(
         "GET",
-        f"/api/schedules/{schedule_id}",
+        f"/api/orders/schedules/{schedule_id}",
         headers=headers
     )
 
@@ -112,7 +112,7 @@ async def assign_driver_to_schedule(schedule_id: str, request: Request):
     
     return await schedules_client.request(
         "PATCH",
-        f"/api/schedules/{schedule_id}/assign-driver",
+        f"/api/orders/schedules/{schedule_id}/assign-driver",
         json_data=body,
         headers=headers
     )
@@ -135,7 +135,7 @@ async def update_schedule_status(schedule_id: str, request: Request):
     
     return await schedules_client.request(
         "PATCH",
-        f"/api/schedules/{schedule_id}/status",
+        f"/api/orders/schedules/{schedule_id}/status",
         json_data=body,
         headers=headers
     )
@@ -158,7 +158,7 @@ async def cancel_schedule(schedule_id: str, request: Request):
     
     return await schedules_client.request(
         "PATCH",
-        f"/api/schedules/{schedule_id}/cancel",
+        f"/api/orders/schedules/{schedule_id}/cancel",
         json_data=body,
         headers=headers
     )
@@ -174,7 +174,7 @@ async def get_schedule_items(schedule_id: str, request: Request):
     
     return await schedules_client.request(
         "GET",
-        f"/api/schedules/{schedule_id}/items",
+        f"/api/orders/schedules/{schedule_id}/items",
         headers=headers
     )
 
@@ -208,7 +208,7 @@ async def get_schedules_statistics(
     
     return await schedules_client.request(
         "GET",
-        "/api/schedules/stats/overview",
+        "/api/orders/schedules/stats/overview",
         params=params,
         headers=headers
     )

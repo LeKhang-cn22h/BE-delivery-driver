@@ -58,11 +58,11 @@ def extract_location_pairs() -> List[Dict[str, Any]]:
 
             payload = data.get("payload", {})
 
-            # ✅ FIX 1: Get pickup location correctly
+            #  FIX 1: Get pickup location correctly
             pickup_location = payload.get("pickup_address", "")
             pickup_area = payload.get("pickup_area_code", "")
 
-            # ✅ FIX 2: Extract delivery locations correctly
+            #  FIX 2: Extract delivery locations correctly
             delivery_locations = []
             for detail in payload.get("order_details", []):
                 delivery_location = detail.get("address_detail", "")
@@ -117,7 +117,7 @@ def analyze_location_pairs(
     pickup_counts: Dict[str, int] = defaultdict(int)
     delivery_counts: Dict[str, int] = defaultdict(int)
 
-    # ✅ FIX 3: Count DIRECTIONAL pairs (pickup → delivery)
+    #  FIX 3: Count DIRECTIONAL pairs (pickup → delivery)
     pair_counts: Dict[Tuple[str, str], Dict] = defaultdict(lambda: {
         "count": 0,
         "pickup_area": "",
@@ -139,7 +139,7 @@ def analyze_location_pairs(
 
             delivery_counts[delivery_loc] += 1
 
-            # ✅ FIX: Don't sort - keep directionality!
+            #  FIX: Don't sort - keep directionality!
             pair_key = (pickup, delivery_loc)
             pair_counts[pair_key]["count"] += 1
             pair_counts[pair_key]["pickup_area"] = pickup_area
@@ -218,7 +218,7 @@ def suggest_post_office_locations(
     suggestions = []
 
     for i, pair in enumerate(location_pairs[:top_n], 1):
-        # ✅ FIX: Use correct field names from analyze_location_pairs()
+        #  FIX: Use correct field names from analyze_location_pairs()
         pickup_loc = pair["pickup_location"]
         delivery_loc = pair["delivery_location"]
         lift = pair["lift"]

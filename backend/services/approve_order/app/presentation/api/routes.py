@@ -1,5 +1,5 @@
 # presentation/api/routes.py
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Query
 from datetime import datetime
 from typing import Optional, Dict, List
 from pydantic import BaseModel
@@ -312,31 +312,34 @@ async def get_schedule_items(
             detail=f"Lỗi khi lấy schedule items: {str(e)}"
         )
     
-@router.get("/api/schedules")
+@router.get("/schedules")
 async def list_schedules(
-    post_office_id: Optional[str] = None,
-    scheduled_date: Optional[str] = None,
-    status: Optional[str] = None,
+     post_office_id: Optional[str] = Query(None),
+    scheduled_date: Optional[str] = Query(None),
+    status: Optional[str] = Query(None),
+    area_code: Optional[str] = Query(None),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=500)
 ):
     # Query từ schedule_repository
     pass
 
-@router.get("/api/schedules/{schedule_id}")
+@router.get("/schedules/{schedule_id}")
 async def get_schedule(schedule_id: str):
     # Get từ schedule_repository
     pass
 
-@router.patch("/api/schedules/{schedule_id}/assign-driver")
+@router.patch("/schedules/{schedule_id}/assign-driver")
 async def assign_driver(schedule_id: str, body: dict):
     # Gọi schedule_repository.assign_driver()
     pass
 
-@router.patch("/api/schedules/{schedule_id}/status")
+@router.patch("/schedules/{schedule_id}/status")
 async def update_status(schedule_id: str, body: dict):
     # Gọi schedule_repository.update_schedule_status()
     pass
 
-@router.get("/api/schedules/{schedule_id}/items")
+@router.get("/schedules/{schedule_id}/items")
 async def get_items(schedule_id: str):
     # Gọi schedule_item_repository.get_items_by_schedule()
     pass
