@@ -65,22 +65,7 @@ app = FastAPI(
     }
 )
 
-# ===== AUTH MIDDLEWARE =====
-# Verify JWT token cho protected routes
-#
-# app.add_middleware(
-#     AuthMiddleware,
-#     auth_service_url=os.getenv("AUTH_SERVICE_URL", "http://auth_service:7000")
-# )
-# # ===== CORS MIDDLEWARE =====
-#
-# app.add_middleware(
-#     CORSMiddleware,
-#     allow_origins=os.getenv("CORS_ORIGINS", "*").split(","),
-#     allow_credentials=True,
-#     allow_methods=["*"],
-#     allow_headers=["*"],
-# )
+
 # ===== CORS MIDDLEWARE (PHẢI ĐỨNG TRƯỚC) =====
 app.add_middleware(
     CORSMiddleware,
