@@ -73,17 +73,34 @@ class SupabaseOrderRepository(OrderRepository):
         return self._from_dict(response.data[0])
 
     async def get_by_id(self, order_id: str) -> Optional[Order]:
-        response = (
-            self._table()
-            .select("*")
-            .eq("id", order_id)
-            .execute()
-        )
-
-        if not response.data:
-            return None
-
-        return self._from_dict(response.data[0])
+        """Lấy đơn hàng theo ID"""
+        print(f"🔍 [SupabaseOrderRepository] get_by_id called with: {order_id}")
+        print(f"🔍 [SupabaseOrderRepository] Schema: {self.schema}, Table: {self.table_name}")
+        
+        try:
+            response = (
+                self._table()
+                .select("*")
+                .eq("id", order_id)
+                .execute()
+            )
+            
+            print(f"📊 [SupabaseOrderRepository] Response data: {response.data}")
+            print(f"📊 [SupabaseOrderRepository] Found {len(response.data) if response.data else 0} rows")
+            
+            if not response.data:
+                print(f"❌ [SupabaseOrderRepository] No data found for order_id: {order_id}")
+                return None
+            
+            order = self._from_dict(response.data[0])
+            print(f"✅ [SupabaseOrderRepository] Successfully mapped order: {order.id}")
+            return order
+            
+        except Exception as e:
+            print(f"❌ [SupabaseOrderRepository] Error in get_by_id: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            raise
     
     async def get_by_post(self, post_id: str, skip: int = 0, limit: int = 10) -> List[Order]:
         response = (

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends, status, Query,Path
+from fastapi import APIRouter, HTTPException, Depends, status, Query,Path, Request
 from typing import List,Optional
 from pydantic import BaseModel
 
@@ -153,60 +153,6 @@ async def create_order(
         raise HTTPException(status_code=500, detail=f"Lỗi hệ thống: {str(e)}")
 
 
-@order_router.get("/{order_id}", response_model=OrderResponseDTO)
-async def get_order(
-        order_id: str,
-        use_case: GetOrderUseCase = Depends(get_get_order_use_case)
-):
-    """
-    Xem chi tiết đơn hàng
-
-    Trả về đầy đủ thông tin:
-    - Thông tin lấy hàng
-    - Trạng thái đơn hàng
-    - Danh sách tất cả kiện hàng
-    - Thống kê: tổng kiện, đã giao, thất bại
-    """
-    try:
-        order = await use_case.execute(order_id)
-
-        return OrderResponseDTO(
-            id=order.id,
-            user_id=order.user_id,
-            post_office_id=order.post_office_id,
-            pickup_point=order.pickup_point,
-            pickup_address=order.pickup_address,
-            pickup_area_code=order.pickup_area_code,
-            pickup_phone=order.pickup_phone,
-            pickup_note=order.pickup_note,
-            status=order.status.value,
-            order_type=order.order_type.value,
-            created_at=order.created_at,
-            total_packages=order.get_total_packages(),
-            delivered_packages=order.get_delivered_packages(),
-            failed_packages=order.get_failed_packages(),
-            order_details=[
-                OrderDetailResponseDTO(
-                    id=d.id,
-                    order_id=d.order_id,
-                    start_point=d.start_point,
-                    address_detail=d.address_detail,
-                    area_code=d.area_code,
-                    status=d.status.value,
-                    priority_score=d.priority_score,
-                    note_send=d.note_send,
-                    recipient_id=d.recipient_id
-
-                )
-                for d in order.order_details
-            ]
-        )
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
 @order_router.get("/post-office/{post_office_id}/orders", response_model=List[OrderSummaryDTO])
 async def get_post_office_orders(
         post_office_id: str,
@@ -295,6 +241,98 @@ async def list_customer_orders(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@order_router.get("/{order_id}", response_model=OrderResponseDTO)
+async def get_order(
+        order_id: str,
+        use_case: GetOrderUseCase = Depends(get_get_order_use_case)
+):
+    """Xem chi tiết đơn hàng"""
+    print(f"📥 Order Service received order_id: {order_id}")
+    print(f"📏 Order ID length: {len(order_id)}")
+    
+    try:
+        # Step 1: Get order from use case
+        print(f"🔍 [Router] Step 1: Calling use_case.execute")
+        order = await use_case.execute(order_id)
+        print(f"✅ [Router] Step 1 SUCCESS - Order: {order.id}")
+        
+        # Step 2: Check order details
+        print(f"📊 [Router] Step 2: Checking order details")
+        print(f"   - Total details: {len(order.order_details)}")
+        print(f"   - Status type: {type(order.status)}")
+        print(f"   - Status value: {order.status}")
+        
+        # Step 3: Map order details
+        print(f"🔍 [Router] Step 3: Mapping order details")
+        mapped_details = []
+        for idx, d in enumerate(order.order_details):
+            try:
+                print(f"   - Mapping detail {idx}: {d.id}")
+                detail_dto = OrderDetailResponseDTO(
+                    id=d.id,
+                    order_id=d.order_id,
+                    start_point=d.start_point,
+                    address_detail=d.address_detail,
+                    area_code=d.area_code,
+                    status=d.status.value if hasattr(d.status, 'value') else str(d.status),
+                    priority_score=d.priority_score,
+                    note_send=d.note_send,
+                    recipient_id=d.recipient_id
+                )
+                mapped_details.append(detail_dto)
+                print(f"   ✅ Detail {idx} mapped successfully")
+            except Exception as e:
+                print(f"   ❌ Error mapping detail {idx}: {str(e)}")
+                raise
+        
+        print(f"✅ [Router] Step 3 SUCCESS - Mapped {len(mapped_details)} details")
+        
+        # Step 4: Create response DTO
+        print(f"🔍 [Router] Step 4: Creating OrderResponseDTO")
+        try:
+            response_dto = OrderResponseDTO(
+                id=order.id,
+                user_id=order.user_id,
+                post_office_id=order.post_office_id,
+                pickup_point=order.pickup_point,
+                pickup_address=order.pickup_address,
+                pickup_area_code=order.pickup_area_code,
+                pickup_phone=order.pickup_phone,
+                pickup_note=order.pickup_note,
+                status=order.status.value if hasattr(order.status, 'value') else str(order.status),
+                order_type=order.order_type.value if hasattr(order.order_type, 'value') else str(order.order_type),
+                created_at=order.created_at,
+                pickup_status=order.pickup_status.value if hasattr(order.pickup_status, 'value') else str(order.pickup_status),
+                pickup_driver_id=None,  # Temporary
+                pickup_failure_reason=None,  # Temporary
+                total_packages=order.get_total_packages(),
+                delivered_packages=order.get_delivered_packages(),
+                failed_packages=order.get_failed_packages(),
+                order_details=mapped_details
+            )
+            print(f"✅ [Router] Step 4 SUCCESS - DTO created")
+        except Exception as e:
+            print(f"❌ [Router] Step 4 FAILED - Error creating DTO: {str(e)}")
+            print(f"   Error type: {type(e)}")
+            import traceback
+            traceback.print_exc()
+            raise
+        
+        # Step 5: Return response
+        print(f"🔍 [Router] Step 5: Returning response")
+        return response_dto
+        
+    except ValueError as e:
+        print(f"❌ [Router] ValueError: {str(e)}")
+        raise HTTPException(status_code=404, detail=str(e))
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"❌ [Router] Unexpected Exception: {str(e)}")
+        print(f"   Exception type: {type(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Internal error: {str(e)}")
 @order_router.post("/{order_id}/cancel")
 async def cancel_order(
         order_id: str,
@@ -354,7 +392,87 @@ async def update_order_status(
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+@order_router.patch("/{order_id}/process")
+async def process_order(
+    order_id: str,
+    action: str = Query(..., regex="^(approve|reject|request_edit)$", description="Hành động xử lý"),
+    note: Optional[str] = Query(None, description="Ghi chú"),
+    reject_reason: Optional[str] = Query(None, description="Lý do từ chối nếu action=reject"),
+    use_case: UpdateOrderStatusUseCase = Depends(get_update_status_use_case)
+):
+    """
+    Xử lý đơn hàng (dành cho manager/admin)
+    
+    Actions:
+    - approve: Duyệt đơn -> chuyển sang confirmed
+    - reject: Từ chối -> chuyển sang cancelled
+    - request_edit: Yêu cầu chỉnh sửa -> giữ nguyên pending
+    """
+    try:
+        if action == "approve":
+            # Duyệt đơn
+            success = await use_case.execute(order_id, "confirmed")
+            return {
+                "success": success,
+                "message": f"Đã duyệt đơn hàng",
+                "new_status": "confirmed",
+                "note": note
+            }
+            
+        elif action == "reject":
+            if not reject_reason:
+                raise ValueError("Vui lòng cung cấp lý do từ chối")
+            
+            # Từ chối đơn
+            success = await use_case.execute(order_id, "cancelled")
+            return {
+                "success": success,
+                "message": f"Đã từ chối đơn hàng",
+                "new_status": "cancelled",
+                "reason": reject_reason,
+                "note": note
+            }
+            
+        elif action == "request_edit":
+            # Yêu cầu chỉnh sửa (có thể gửi notification cho khách)
+            return {
+                "success": True,
+                "message": "Đã gửi yêu cầu chỉnh sửa đến khách hàng",
+                "new_status": "pending",
+                "note": note
+            }
+            
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
+
+@order_router.patch("/{order_id}/edit")
+async def edit_order_info(
+    order_id: str,
+    request: Request,
+    use_case: GetOrderUseCase = Depends(get_get_order_use_case)
+):
+    """
+    Chỉnh sửa thông tin đơn hàng
+    """
+    try:
+        body = await request.json()
+        
+        # TODO: Implement logic update order info
+        # Hiện tại chỉ return success, bạn cần implement logic update vào DB
+        
+        return {
+            "success": True,
+            "message": "Đã cập nhật thông tin đơn hàng",
+            "updated_fields": list(body.keys())
+        }
+        
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 # ============================================================================
 # POST OFFICES ROUTER

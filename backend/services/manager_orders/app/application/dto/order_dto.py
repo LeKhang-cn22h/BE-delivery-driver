@@ -98,16 +98,16 @@ class OrderResponseDTO(BaseModel):
     id:str
     status:str
     user_id:str
-    pickup_point:Optional[str]
+    pickup_point:Optional[str]=None
     order_type:str
-    pickup_address:Optional[str]
-    pickup_area_code:Optional[str]
+    pickup_address:Optional[str]=None
+    pickup_area_code:Optional[str]=None
     create_at:datetime
     pickup_location: Optional[GeoPointDTO]= Field(None, description="Tọa độ lấy hàng")
-    pickup_phone:str
-    pickup_note:Optional[str]
-    pickup_status:Optional[str]
-    pickup_driver_id:Optional[str]
+    pickup_phone:Optional[str]=None
+    pickup_note:Optional[str]=None
+    pickup_status:Optional[str]=None
+    pickup_driver_id:Optional[str]=None
     pickup_failure_reason:str
     post_office_id:str
     @field_validator("pickup_location", mode="before")
@@ -128,8 +128,8 @@ class OrderDetailResponseDTO(BaseModel):
     area_code: str
     status: OrderDetailStatus
     priority_score: int
-    note_send:Optional[str]
-    recipient_id:str
+    note_send:Optional[str] = None
+    recipient_id:Optional[str] = None
     
 
 

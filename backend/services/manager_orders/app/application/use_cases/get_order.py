@@ -17,16 +17,37 @@ class GetOrderUseCase:
         self.order_detail_repository = order_detail_repository
 
     async def execute(self, order_id: str) -> Order:
-        # Lấy thông tin đơn hàng
-        order = await self.order_repository.get_by_id(order_id)
-        if not order:
-            raise ValueError(f"Không tìm thấy đơn hàng {order_id}")
-
-        # Lấy tất cả kiện hàng trong đơn
-        order_details = await self.order_detail_repository.get_by_order_id(order_id)
-        order.order_details = order_details
-
-        return order
+        """Lấy chi tiết đơn hàng"""
+        print(f"🔍 [GetOrderUseCase] execute called with order_id: {order_id}")
+        
+        try:
+            # Lấy thông tin đơn hàng
+            print(f"🔍 [GetOrderUseCase] Calling repository.get_by_id({order_id})")
+            order = await self.order_repository.get_by_id(order_id)
+            
+            if not order:
+                print(f"❌ [GetOrderUseCase] Order not found: {order_id}")
+                raise ValueError(f"Không tìm thấy đơn hàng {order_id}")
+            
+            print(f"✅ [GetOrderUseCase] Found order: {order.id}")
+            
+            # Lấy tất cả kiện hàng trong đơn
+            print(f"🔍 [GetOrderUseCase] Loading order details for order_id: {order_id}")
+            order_details = await self.order_detail_repository.get_by_order_id(order_id)
+            print(f"📦 [GetOrderUseCase] Found {len(order_details)} order details")
+            
+            order.order_details = order_details
+            
+            return order
+            
+        except ValueError as e:
+            # Re-raise ValueError (already logged)
+            raise
+        except Exception as e:
+            print(f"❌ [GetOrderUseCase] Unexpected error: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            raise ValueError(f"Lỗi khi lấy đơn hàng {order_id}: {str(e)}")
     
     async def getbyPost(self, post_id: str, skip: int = 0, limit: int = 10) -> List[Order]:
         """Lấy đơn hàng theo post office"""

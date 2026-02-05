@@ -63,6 +63,8 @@ async def create_order(request: Request):
 @router.get("/{order_id}", summary="Lấy chi tiết đơn hàng")
 async def get_order_detail(order_id: str, request: Request):
     headers = await get_user_headers(request)
+    logger.info(f"📥 Gateway received order_id: {order_id}")
+    logger.info(f"📏 Order ID length: {len(order_id)}")
 
     return await orders_client.request(
         "GET",
@@ -191,7 +193,58 @@ async def update_order_status(
         params={"new_status": new_status},
         headers=headers
     )
+@router.patch("/{order_id}/process", summary="Xử lý đơn hàng (approve/reject)")
+async def process_order(
+    order_id: str,
+    request: Request,
+    action: str = Query(..., regex="^(approve|reject|request_edit)$"),
+    note: Optional[str] = Query(None),
+    reject_reason: Optional[str] = Query(None),
+):
+    """
+    Manager/Admin xử lý đơn hàng
+    """
+    headers = await get_user_headers(request)
+    
+    params = {"action": action}
+    if note:
+        params["note"] = note
+    if reject_reason:
+        params["reject_reason"] = reject_reason
+    
+    logger.info(
+        f"User {headers.get('X-User-Email')} {action} order {order_id}"
+    )
+    
+    return await orders_client.request(
+        "PATCH",
+        f"/api/v1/orders/{order_id}/process",
+        params=params,
+        headers=headers
+    )
 
+
+@router.patch("/{order_id}/edit", summary="Chỉnh sửa thông tin đơn hàng")
+async def edit_order_info(
+    order_id: str,
+    request: Request,
+):
+    """
+    Chỉnh sửa thông tin đơn hàng
+    """
+    headers = await get_user_headers(request)
+    body = await request.json()
+    
+    logger.info(
+        f"User {headers.get('X-User-Email')} edit order {order_id}"
+    )
+    
+    return await orders_client.request(
+        "PATCH",
+        f"/api/v1/orders/{order_id}/edit",
+        json_data=body,
+        headers=headers
+    )
 
 # ================================
 # POST OFFICE ENDPOINTS
