@@ -3,7 +3,6 @@ from pydantic import BaseModel, field_validator
 from typing import Optional, Dict, Any, Union
 from datetime import datetime
 
-
 class OrderDetail(BaseModel):
     """Model cho order_detail"""
     id: str
@@ -12,7 +11,7 @@ class OrderDetail(BaseModel):
     status: str
     address_detail: str
     area_code: Optional[str] = None
-    location: Optional[Union[str, Dict[str, Any]]] = None  # Accept string or dict
+    location: Optional[Union[str, Dict[str, Any]]] = None
     priority_score: Optional[int] = None
 
     @field_validator('location', mode='before')

@@ -14,7 +14,7 @@ from domain.repositories.schedule_repository import (
     IOrderRepository
 )
 from domain.services.schedule_service import ScheduleService
-from domain.entities.schedule import ScheduleItem
+from domain.entities.Schedule import ScheduleItem
 from uuid import uuid4
 
 

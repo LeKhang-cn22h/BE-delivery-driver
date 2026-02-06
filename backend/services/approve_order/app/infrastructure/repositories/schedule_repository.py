@@ -5,7 +5,6 @@ from datetime import datetime
 from supabase import Client
 from domain.models import Schedule
 
-
 class ScheduleRepository:
     """Repository cho Schedule với Supabase"""
 
@@ -19,7 +18,7 @@ class ScheduleRepository:
             area_code: str,
             scheduled_date: datetime,
             total_orders: int,
-            status: str = 'draft',  # ✅ THÊM parameter status với default 'draft'
+            status: str = 'draft', 
             driver_id: Optional[str] = None
     ) -> Schedule:
         """
@@ -34,7 +33,7 @@ class ScheduleRepository:
                 "driver_id": driver_id,
                 "scheduled_date": scheduled_date.date().isoformat() if isinstance(scheduled_date, datetime) else scheduled_date.isoformat(),
                 "area_code": area_code,
-                "status": status,  # ✅ SỬA: Dùng parameter status thay vì hardcode
+                "status": status,  
                 "total_orders": total_orders,
                 "completed_orders": 0,
                 "failed_orders": 0,
@@ -150,3 +149,24 @@ class ScheduleRepository:
 
         except Exception as e:
             raise Exception(f"Lỗi khi gán tài xế: {str(e)}")
+        
+    async def update_schedule_fields(self, schedule_id: str, update_data: dict):
+        """Update specific fields of a schedule"""
+        try:
+            response = (
+                self.db
+                .schema(self.schema)
+                .table("schedules")
+                .update(update_data)
+                .eq("id", schedule_id)
+                .execute()
+            )
+            
+            if not response.data or len(response.data) == 0:
+                return None
+            
+            from domain.models import Schedule
+            return Schedule(**response.data[0])
+        except Exception as e:
+            print(f" Error updating schedule: {str(e)}")
+            raise

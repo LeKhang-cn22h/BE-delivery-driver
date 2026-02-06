@@ -1,8 +1,6 @@
 from typing import List
 from datetime import datetime
 from collections import defaultdict
-
-# Import từ application/dto thay vì domain/models
 from application.dto import OrderProcessingResult, BatchProcessingResult
 from domain.models import OrderDetail
 

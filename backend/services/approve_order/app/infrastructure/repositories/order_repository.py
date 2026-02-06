@@ -3,7 +3,7 @@ from typing import List, Dict, Optional
 from supabase import Client
 from domain.models import OrderDetail
 from collections import defaultdict
-
+import traceback
 
 class OrderRepository:
     """Repository cho Order và OrderDetail với Supabase"""
@@ -190,21 +190,11 @@ class OrderRepository:
                 try:
                     result.append(OrderDetail(**item))
                 except Exception as parse_error:
-                    print(f"Error parsing item: {item}")
-                    print(f"Parse error: {str(parse_error)}")
                     raise
 
             return result
 
         except Exception as e:
-            # Log chi tiết hơn
-            import traceback
-            print(f"Error in get_orders_by_area:")
-            print(f"  post_office_id: {post_office_id}")
-            print(f"  area_code: {area_code}")
-            print(f"  status: {status}")
-            print(f"  Error: {str(e)}")
-            print(f"  Traceback: {traceback.format_exc()}")
             raise Exception(f"Lỗi khi lấy orders theo area: {str(e)}")
 
     async def update_order_details_status(

@@ -5,7 +5,6 @@ from datetime import datetime
 from supabase import Client
 from domain.models import ScheduleItem, OrderDetail
 
-
 class ScheduleItemRepository:
     """Repository cho Schedule Item với Supabase"""
 
@@ -38,8 +37,7 @@ class ScheduleItemRepository:
                     "schedule_id": schedule_id,
                     "order_detail_id": order_detail.id,
                     "status": "pending",
-                    "queue": idx,  # ✅ SỬA: Đổi từ 'queue_number' sang 'queue'
-                    # ✅ XÓA: Không có cột 'created_at'
+                    "queue": idx,  #
                 }
                 items_data.append(item)
 
@@ -78,7 +76,7 @@ class ScheduleItemRepository:
                     )
                 """)
                 .eq("schedule_id", schedule_id)
-                .order("queue", desc=False)  # ✅ SỬA: Đổi từ 'queue_number' sang 'queue'
+                .order("queue", desc=False)  
                 .execute()
             )
 
@@ -93,9 +91,9 @@ class ScheduleItemRepository:
             response = (
                 self.db.schema(self.schema)
                 .table("schedule_items")
-                .select("queue")  # ✅ SỬA: Đổi từ 'queue_number' sang 'queue'
+                .select("queue")  
                 .eq("schedule_id", schedule_id)
-                .order("queue", desc=True)  # ✅ SỬA
+                .order("queue", desc=True)  
                 .limit(1)
                 .execute()
             )
