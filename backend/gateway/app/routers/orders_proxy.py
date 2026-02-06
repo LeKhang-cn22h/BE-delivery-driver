@@ -133,8 +133,8 @@ async def cancel_order(
 async def get_post_office_orders(
     post_office_id: str,
     request: Request,
-    status: Optional[str] = Query(None, regex="^(pending|confirmed|processing|completed|cancelled)$"),
-    pickup_status: Optional[str] = Query(None, regex="^(pending|scheduled|picked|failed)$"),
+    status: Optional[str] = Query(None, pattern="^(pending|confirmed|processing|completed|cancelled)$"),
+    pickup_status: Optional[str] = Query(None, pattern="^(pending|scheduled|picked|failed)$"),
     skip: int = Query(0, ge=0),
     limit: int = Query(10, ge=1, le=100),
 ):
@@ -177,7 +177,7 @@ async def update_order_status(
     request: Request,
     new_status: str = Query(
         ...,
-        regex="^(pending|confirmed|picking_up|picked_up|in_transit|delivering|completed|cancelled)$"
+        pattern="^(pending|confirmed|picking_up|picked_up|in_transit|delivering|completed|cancelled)$"
     ),
 ):
     headers = await get_user_headers(request)
@@ -196,7 +196,7 @@ async def update_order_status(
 async def process_order(
     order_id: str,
     request: Request,
-    action: str = Query(..., regex="^(approve|reject|request_edit)$"),
+    action: str = Query(..., pattern="^(approve|reject|request_edit)$"),
     note: Optional[str] = Query(None),
     reject_reason: Optional[str] = Query(None),
 ):

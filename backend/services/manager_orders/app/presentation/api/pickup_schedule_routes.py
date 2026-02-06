@@ -114,7 +114,7 @@ async def assign_pickup_driver(
 @router.get("/driver/{driver_id}")
 async def get_driver_pickup_schedules(
     driver_id: str,
-    status: Optional[str] = Query(None, regex="^(scheduled|picked|failed)$")
+    status: Optional[str] = Query(None, pattern="^(scheduled|picked|failed)$")
 ):
     """
     Lấy danh sách đơn PICKUP được gán cho tài xế
@@ -157,7 +157,7 @@ async def update_pickup_status(
     order_id: str,
     new_status: str = Query(
         ..., 
-        regex="^(scheduled|picked|failed)$",
+        pattern="^(scheduled|picked|failed)$",
         description="Trạng thái mới: scheduled, picked, failed"
     ),
     failure_reason: Optional[str] = Query(None, description="Lý do thất bại nếu status=failed")

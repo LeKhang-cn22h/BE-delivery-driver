@@ -8,7 +8,6 @@ logger = logging.getLogger(__name__)
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from services.http_client import HTTPClient
-from services.approve_order.app.application.dto.scheduling_dto import SchedulingRequest, SchedulingResponse
 
 router = APIRouter(
     prefix="/api/approve-orders",  

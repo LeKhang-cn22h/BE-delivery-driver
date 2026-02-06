@@ -54,7 +54,7 @@ async def assign_pickup_driver(order_id: str, request: Request):
 async def get_driver_pickup_schedules(
     driver_id: str,
     request: Request,
-    status: Optional[str] = Query(None, regex="^(scheduled|picked|failed)$")
+    status: Optional[str] = Query(None, pattern="^(scheduled|picked|failed)$")
 ):
     """
     Lấy danh sách đơn PICKUP được gán cho tài xế
@@ -79,7 +79,7 @@ async def get_driver_pickup_schedules(
 async def update_pickup_status(
     order_id: str,
     request: Request,
-    new_status: str = Query(..., regex="^(scheduled|picked|failed)$"),
+    new_status: str = Query(..., pattern="^(scheduled|picked|failed)$"),
     failure_reason: Optional[str] = Query(None)
 ):
     """

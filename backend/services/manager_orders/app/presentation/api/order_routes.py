@@ -197,8 +197,8 @@ async def create_order(
 @order_router.get("/post-office/{post_office_id}/orders", response_model=List[OrderSummaryDTO])
 async def get_post_office_orders(
         post_office_id: str,
-        status: Optional[str] = Query(None, regex="^(pending|confirmed|processing|completed|cancelled)$"),
-        pickup_status: Optional[str] = Query(None, regex="^(pending|scheduled|picked|failed)$"),
+        status: Optional[str] = Query(None, pattern="^(pending|confirmed|processing|completed|cancelled)$"),
+        pickup_status: Optional[str] = Query(None, pattern="^(pending|scheduled|picked|failed)$"),
         skip: int = Query(0, ge=0),
         limit: int = Query(10, ge=1, le=100),
         use_case: GetOrderUseCase = Depends(get_get_order_use_case)
@@ -405,7 +405,7 @@ async def update_order_status(
         order_id: str,
         new_status: str = Query(
             ...,
-            regex="^(pending|confirmed|picking_up|picked_up|in_transit|delivering|completed|cancelled)$",
+            pattern="^(pending|confirmed|picking_up|picked_up|in_transit|delivering|completed|cancelled)$",
             description="Trạng thái mới"
         ),
         use_case: UpdateOrderStatusUseCase = Depends(get_update_status_use_case)
@@ -436,7 +436,7 @@ async def update_order_status(
 @order_router.patch("/{order_id}/process")
 async def process_order(
     order_id: str,
-    action: str = Query(..., regex="^(approve|reject|request_edit)$", description="Hành động xử lý"),
+    action: str = Query(..., pattern="^(approve|reject|request_edit)$", description="Hành động xử lý"),
     note: Optional[str] = Query(None, description="Ghi chú"),
     reject_reason: Optional[str] = Query(None, description="Lý do từ chối nếu action=reject"),
     use_case: UpdateOrderStatusUseCase = Depends(get_update_status_use_case)
