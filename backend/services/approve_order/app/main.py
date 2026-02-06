@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from presentation.api.driver_scheduling_routes import router as driver_scheduling
-from presentation.api.routes import router as order_router
+from api.routes.order_router import router as Orouter
+from api.routes.scheduling_router import router as Srouter
 import uvicorn
 
 # Tạo FastAPI app
@@ -14,15 +14,15 @@ app = FastAPI(
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Trong production nên chỉ định cụ thể
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 # Include routers
-app.include_router(order_router)
-app.include_router(driver_scheduling)
+app.include_router(Orouter)
+app.include_router(Srouter)
 
 @app.get("/")
 async def root():
@@ -44,5 +44,5 @@ if __name__ == "__main__":
         "main:app",
         host="0.0.0.0",
         port=4000,
-        reload=True  # Tắt trong production
+        reload=True 
     )

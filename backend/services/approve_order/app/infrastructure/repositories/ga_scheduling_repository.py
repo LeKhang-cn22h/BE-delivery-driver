@@ -6,7 +6,10 @@ import asyncio
 
 
 class GASchedulingRepository:
-    """Repository hỗ trợ GA Scheduling Service"""
+    """Repository hỗ trợ GA Scheduling Service 
+        dùng cho việc lấy đơn cần xếp lịch và tạo lịch và lịch item
+    
+    """
 
     def __init__(self, supabase_client):
         self.db = supabase_client
@@ -16,13 +19,13 @@ class GASchedulingRepository:
         """Helper để gọi bảng từ schema delivery"""
         return self.db.schema(self.schema).table(table_name)
 
-    async def get_pending_orders(
+    async def get_confirmed_orders(
         self, 
         area_codes: List[str], 
         post_office_id: UUID
     ) -> List[dict]:
         """
-        Lấy đơn hàng pending theo area_codes và post_office_id
+        Lấy đơn hàng confirmed theo area_codes và post_office_id
         Chỉ lấy đơn chưa có trong schedule active
         """
         loop = asyncio.get_event_loop()
@@ -61,7 +64,7 @@ class GASchedulingRepository:
                     continue
 
                 # Check order status
-                if order["status"] not in ["confirmed", "processing"]:
+                if order["status"] not in ["processing"]:
                     continue
 
                 # Check chưa có schedule active

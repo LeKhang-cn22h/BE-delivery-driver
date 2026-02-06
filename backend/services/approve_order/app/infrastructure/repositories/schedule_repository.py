@@ -12,50 +12,6 @@ class ScheduleRepository:
         self.db = supabase_client
         self.schema = schema
 
-    async def create_schedule(
-            self,
-            post_office_id: str,
-            area_code: str,
-            scheduled_date: datetime,
-            total_orders: int,
-            status: str = 'draft', 
-            driver_id: Optional[str] = None
-    ) -> Schedule:
-        """
-        Tạo schedule mới cho một vùng
-
-        Valid statuses: 'draft', 'confirmed', 'in_progress', 'completed'
-        Status mặc định: 'draft'
-        """
-        try:
-            schedule_data = {
-                "id": str(uuid4()),
-                "driver_id": driver_id,
-                "scheduled_date": scheduled_date.date().isoformat() if isinstance(scheduled_date, datetime) else scheduled_date.isoformat(),
-                "area_code": area_code,
-                "status": status,  
-                "total_orders": total_orders,
-                "completed_orders": 0,
-                "failed_orders": 0,
-                "created_at": datetime.now().isoformat(),
-                "post_office_id": post_office_id
-            }
-
-            response = (
-                self.db.schema(self.schema)
-                .table("schedules")
-                .insert(schedule_data)
-                .execute()
-            )
-
-            if not response.data:
-                raise Exception("Không thể tạo schedule")
-
-            return Schedule(**response.data[0])
-
-        except Exception as e:
-            raise Exception(f"Lỗi khi tạo schedule: {str(e)}")
-
     async def get_schedule_by_id(self, schedule_id: str) -> Schedule:
         """Lấy schedule theo ID"""
         try:

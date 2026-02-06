@@ -101,7 +101,7 @@ class ScheduleItemRepository:
             if not response.data:
                 return 0
 
-            return response.data[0]["queue"]  # ✅ SỬA
+            return response.data[0]["queue"]  
 
         except Exception as e:
             raise Exception(f"Lỗi khi lấy max queue: {str(e)}")

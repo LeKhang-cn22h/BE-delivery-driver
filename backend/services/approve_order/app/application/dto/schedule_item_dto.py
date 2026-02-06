@@ -116,3 +116,14 @@ class ItemDeliveryHistory(BaseModel):
     order_detail_id: str
     status_history: List[dict]  # [{status, timestamp, note}]
     current_status: str
+
+class GetOrdersRequest(BaseModel):
+    """Request để lấy danh sách đơn hàng"""
+    post_office_id: str
+    status: Optional[str] = "pending"
+
+class GetOrdersByAreaRequest(BaseModel):
+    """Request để lấy đơn hàng theo vùng"""
+    post_office_id: str
+    area_code: str
+    status: Optional[str] = "pending"

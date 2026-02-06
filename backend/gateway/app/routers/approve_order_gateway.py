@@ -1,9 +1,14 @@
-from fastapi import APIRouter, Request, HTTPException
+from fastapi import APIRouter, Request, HTTPException, Query
+from typing import Optional
 import os
 import sys
+import logging
+
+logger = logging.getLogger(__name__)
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from services.http_client import HTTPClient
+from services.approve_order.app.application.dto.scheduling_dto import SchedulingRequest, SchedulingResponse
 
 router = APIRouter(
     prefix="/api/approve-orders",  
@@ -17,12 +22,14 @@ APPROVE_ORDER_SERVICE_URL = os.getenv(
 
 order_client = HTTPClient(APPROVE_ORDER_SERVICE_URL)
 
-
-@router.get("/schedule/{schedule_id}/items", summary="Lấy chi tiết schedule")
-async def get_schedule_items(schedule_id: str):
-    """Lấy danh sách order_details trong một schedule"""
-    return await order_client.get(f"/api/orders/schedule/{schedule_id}/items")
-
+@router.get("/health", summary="Health check")
+async def health_check():
+    """Kiểm tra sức khỏe service"""
+    try:
+        response = await order_client.get("/health")
+        return {"status": "healthy", "backend": response}
+    except Exception as e:
+        raise HTTPException(status_code=503, detail=str(e))
 
 @router.post("/list-with-priority", summary="Lấy đơn hàng với priority")
 async def get_orders_with_priority(request: Request):
@@ -59,11 +66,81 @@ async def process_orders_by_area(request: Request):
     return await order_client.post("/api/orders/process-by-area", body)
 
 
-@router.get("/health", summary="Health check")
-async def health_check():
-    """Kiểm tra sức khỏe service"""
-    try:
-        response = await order_client.get("/health")
-        return {"status": "healthy", "backend": response}
-    except Exception as e:
-        raise HTTPException(status_code=503, detail=str(e))
+
+@router.get("/", summary="Lấy danh sách schedules với thông tin driver")
+async def list_schedules(
+    request: Request,
+    post_office_id: Optional[str] = Query(None),
+    scheduled_date: Optional[str] = Query(None),
+    status: Optional[str] = Query(None),
+    area_code: Optional[str] = Query(None),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=500)
+):
+    """Lấy danh sách schedules với filters"""    
+    params = {"skip": skip, "limit": limit}
+    if post_office_id:
+        params["post_office_id"] = post_office_id
+    if scheduled_date:
+        params["scheduled_date"] = scheduled_date
+    if status:
+        params["status"] = status
+    if area_code:
+        params["area_code"] = area_code
+    
+    logger.info(f"Listing schedules with filters: {params}")
+    
+    return await order_client.get(
+        "/api/orders/schedules",
+        params=params
+    )
+
+@router.get("/schedule/{schedule_id}/items", summary="Lấy chi tiết schedule")
+async def get_schedule_items(schedule_id: str):
+    """Lấy danh sách order_details trong một schedule"""
+    return await order_client.get(f"/api/orders/schedule/{schedule_id}/items")
+
+
+@router.patch("/{schedule_id}/assign-driver", summary="Gán tài xế cho schedule")
+async def assign_driver_to_schedule(schedule_id: str, request: Request):
+    """Gán tài xế cho schedule"""
+    body = await request.json()
+    logger.info(f"Assigning driver to schedule {schedule_id}: {body.get('driver_id')}")
+    
+    return await order_client.patch(
+        f"/api/orders/schedules/{schedule_id}/assign-driver",
+        json_data=body
+    )
+
+@router.patch("/{schedule_id}/status", summary="Cập nhật trạng thái schedule")
+async def update_schedule_status(schedule_id: str, request: Request):
+    """Cập nhật trạng thái schedule"""
+    body = await request.json()
+    logger.info(f"Updating schedule {schedule_id} status to: {body.get('status')}")
+    
+    return await order_client.patch(
+        f"/api/orders/schedules/{schedule_id}/status",
+        json_data=body
+    )
+
+@router.patch("/{schedule_id}/cancel", summary="Hủy schedule")
+async def cancel_schedule(schedule_id: str):    
+    return await order_client.patch(f"/api/orders/schedules/{schedule_id}/cancel")
+
+@router.get("/schedules/{schedule_id}", summary="lấy chi tiết 1 schedule")
+async def get_schedule(schedule_id:str):
+    return await order_client.get(f"/api/orders/schedules/{schedule_id}")
+
+@router.post("/schedule", summary="Tạo schedule với GA (không gán driver)")
+async def create_schedule_with_ga(request: Request):
+    body = await request.json()
+    logger.info(f"Creating schedule with GA: {body}")
+    return await order_client.post("/api/scheduling/create", body)
+
+
+@router.post("/schedule-quick", summary="Tạo schedule nhanh với cấu hình mặc định")
+async def create_schedule_quick(request: Request):
+
+    body = await request.json()
+    logger.info(f"Creating quick schedule: {body}")
+    return await order_client.post("/api/scheduling/create-quick", body)

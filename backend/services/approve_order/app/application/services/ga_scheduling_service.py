@@ -1,9 +1,10 @@
 # application/services/ga_scheduling_service.py
 """
 Service xếp lịch sử dụng Genetic Algorithm
+CHỈ tạo schedule, KHÔNG tối ưu route
 """
 from typing import List, Dict, Tuple
-from uuid import UUID, uuid4
+from uuid import UUID
 from datetime import date
 import asyncio
 
@@ -29,14 +30,14 @@ class GASchedulingService:
         Tạo schedules bằng Genetic Algorithm
         
         Flow:
-        1. Lấy đơn hàng pending theo area_codes
-        2. Chạy GA để tối ưu (gom đơn, tối ưu route)
+        1. Lấy đơn hàng confirmed theo area_codes
+        2. Chạy GA để gom đơn thành các schedule
         3. Tạo schedules (KHÔNG gán driver)
         4. Trả về kết quả
         """
         
         # 1. Lấy đơn hàng cần xếp lịch
-        orders_data = await self.repository.get_pending_orders(
+        orders_data = await self.repository.get_confirmed_orders(
             area_codes=request.area_codes,
             post_office_id=request.post_office_id
         )
@@ -72,8 +73,7 @@ class GASchedulingService:
         # 4. Chuyển solution thành schedules
         schedule_groups = self._convert_solution_to_groups(
             solution=best_solution,
-            orders=orders_data,
-            max_orders=request.max_orders_per_schedule
+            orders=orders_data
         )
 
         # 5. Lưu vào database
@@ -101,7 +101,7 @@ class GASchedulingService:
             total_orders_processed=len(orders_data) - len(unassigned),
             total_schedules_created=len(created_schedules),
             best_fitness_score=best_solution.fitness,
-            generations_run=len(stats) - 1,  # -1 vì có execution_time ở cuối
+            generations_run=len(stats) - 1,
             schedules=created_schedules,
             unassigned_order_ids=unassigned,
             warnings=[]
@@ -130,12 +130,13 @@ class GASchedulingService:
     def _convert_solution_to_groups(
         self,
         solution: Individual,
-        orders: List[dict],
-        max_orders: int
+        orders: List[dict]
     ) -> List[Dict]:
         """
         Chuyển solution GA thành các nhóm schedule
         Mỗi nhóm = 1 schedule (chưa có driver)
+        
+        NOTE: Giữ nguyên thứ tự từ GA, không tối ưu route
         """
         # Nhóm đơn hàng theo schedule_idx từ chromosome
         schedule_orders: Dict[int, List[int]] = {}
@@ -150,116 +151,16 @@ class GASchedulingService:
             if not order_indices:
                 continue
 
-            # Tối ưu route trong nhóm
-            optimized_route = self._optimize_route(order_indices, orders)
-            
-            # Tính metrics
-            total_distance = self._calculate_total_distance(optimized_route, orders)
-            
             # Lấy area_code từ đơn đầu tiên
-            area_code = orders[optimized_route[0]]['area_code'] if optimized_route else ''
+            area_code = orders[order_indices[0]]['area_code'] if order_indices else ''
 
             groups.append({
-                'order_indices': optimized_route,
+                'order_indices': order_indices,  # Giữ nguyên thứ tự từ GA
                 'area_code': area_code,
-                'total_orders': len(optimized_route),
-                'total_distance_km': total_distance
+                'total_orders': len(order_indices)
             })
 
         return groups
-
-    def _optimize_route(self, order_indices: List[int], orders: List[dict]) -> List[int]:
-        """Tối ưu route bằng nearest neighbor"""
-        if len(order_indices) <= 1:
-            return order_indices
-
-        # Sort by priority first
-        sorted_indices = sorted(
-            order_indices,
-            key=lambda idx: orders[idx].get('priority_score', 0),
-            reverse=True
-        )
-
-        route = [sorted_indices[0]]
-        remaining = set(sorted_indices[1:])
-
-        while remaining:
-            current_idx = route[-1]
-            current_location = orders[current_idx].get('location')
-
-            if not current_location:
-                next_idx = remaining.pop()
-                route.append(next_idx)
-                continue
-
-            # Tìm đơn gần nhất
-            nearest_idx = None
-            min_distance = float('inf')
-
-            for idx in remaining:
-                order_location = orders[idx].get('location')
-                if order_location:
-                    distance = self._haversine_distance(current_location, order_location)
-                    if distance < min_distance:
-                        min_distance = distance
-                        nearest_idx = idx
-
-            if nearest_idx is not None:
-                route.append(nearest_idx)
-                remaining.remove(nearest_idx)
-            else:
-                next_idx = remaining.pop()
-                route.append(next_idx)
-
-        return route
-
-    @staticmethod
-    def _haversine_distance(point1, point2) -> float:
-        """Tính khoảng cách Haversine (km)"""
-        import math
-
-        if not point1 or not point2:
-            return 0.0
-
-        # Handle both tuple and dict format
-        if isinstance(point1, dict):
-            lat1, lon1 = point1.get('lat', 0), point1.get('lon', 0)
-        else:
-            lat1, lon1 = point1
-            
-        if isinstance(point2, dict):
-            lat2, lon2 = point2.get('lat', 0), point2.get('lon', 0)
-        else:
-            lat2, lon2 = point2
-
-        R = 6371.0
-        lat1_rad = math.radians(lat1)
-        lon1_rad = math.radians(lon1)
-        lat2_rad = math.radians(lat2)
-        lon2_rad = math.radians(lon2)
-
-        dlat = lat2_rad - lat1_rad
-        dlon = lon2_rad - lon1_rad
-
-        a = math.sin(dlat / 2) ** 2 + math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(dlon / 2) ** 2
-        c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
-
-        return R * c
-
-    def _calculate_total_distance(self, route: List[int], orders: List[dict]) -> float:
-        """Tính tổng khoảng cách của route"""
-        if len(route) <= 1:
-            return 0.0
-
-        total_distance = 0.0
-        for i in range(len(route) - 1):
-            loc1 = orders[route[i]].get('location')
-            loc2 = orders[route[i + 1]].get('location')
-
-            if loc1 and loc2:
-                total_distance += self._haversine_distance(loc1, loc2)
-
-        return round(total_distance, 2)
 
     async def _save_schedules(
         self,
@@ -301,7 +202,7 @@ class GASchedulingService:
             # Build response
             items = [
                 ScheduleItemResponse(
-                    id="",  # Will be filled by DB
+                    id="",
                     order_detail_id=orders_data[idx]['id'],
                     sequence_number=seq + 1,
                     address=orders_data[idx].get('address_detail'),
@@ -317,7 +218,7 @@ class GASchedulingService:
                 scheduled_date=scheduled_date,
                 status='draft',
                 total_orders=group['total_orders'],
-                total_distance_km=group['total_distance_km'],
+                total_distance_km=None,  # Không tính ở đây
                 items=items,
                 driver_id=None,
                 driver_name=None

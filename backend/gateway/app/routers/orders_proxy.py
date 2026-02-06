@@ -12,7 +12,6 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1/orders", tags=["Orders Gateway"])
 routerP = APIRouter(prefix="/api/v1/post_offices", tags=["Post Offices Gateway"])
 routerD = APIRouter(prefix="/api/v1/drivers", tags=["Drivers Gateway"])
-# URL tới Order Service (port 8002)
 ORDERS_SERVICE_URL = os.getenv(
     "ORDERS_SERVICE_URL",
     "http://orders_service:8002"

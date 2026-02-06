@@ -1,4 +1,9 @@
 # application/services/genetic_algorithm.py
+"""
+Genetic Algorithm cho việc gom đơn hàng thành schedules
+CHỈ gom đơn theo area_code và cân bằng số đơn
+KHÔNG tính khoảng cách (có API riêng để tối ưu route)
+"""
 import random
 import math
 import time
@@ -14,27 +19,28 @@ class Individual:
     """
     chromosome: List[Tuple[int, int]]
     fitness: float = 0.0
-    total_distance: float = 0.0
     balance_score: float = 0.0
     priority_score: float = 0.0
+    area_score: float = 0.0
 
 
 class GeneticAlgorithmScheduler:
     """
-    Thuật toán di truyền để gom đơn hàng thành các schedules tối ưu
+    Thuật toán di truyền để gom đơn hàng thành các schedules
     
     Mục tiêu:
-    - Gom đơn cùng khu vực
-    - Tối ưu khoảng cách trong mỗi schedule
+    - Gom đơn cùng khu vực (area_code)
     - Cân bằng số đơn giữa các schedules
     - Ưu tiên đơn có priority cao
+    
+    KHÔNG tính khoảng cách - có API riêng để tối ưu route
     """
 
     def __init__(
         self,
         orders: List[dict],
         max_orders_per_schedule: int = 15,
-        max_distance_km: float = 40.0,
+        max_distance_km: float = 40.0,  
         population_size: int = 50,
         generations: int = 100,
         mutation_rate: float = 0.1,
@@ -44,7 +50,6 @@ class GeneticAlgorithmScheduler:
         self.orders = orders
         self.num_orders = len(orders)
         self.max_orders_per_schedule = max_orders_per_schedule
-        self.max_distance_km = max_distance_km
         
         self.population_size = population_size
         self.generations = generations
@@ -54,59 +59,6 @@ class GeneticAlgorithmScheduler:
 
         # Tính số schedule cần thiết (ước lượng)
         self.num_schedules = max(1, (self.num_orders + max_orders_per_schedule - 1) // max_orders_per_schedule)
-
-        # Cache khoảng cách
-        self.distance_cache: Dict[Tuple[int, int], float] = {}
-        self._precompute_distances()
-
-    def _precompute_distances(self):
-        """Tính trước khoảng cách giữa các điểm"""
-        for i in range(self.num_orders):
-            for j in range(i + 1, self.num_orders):
-                distance = self._calculate_distance(
-                    self.orders[i].get('location'),
-                    self.orders[j].get('location')
-                )
-                self.distance_cache[(i, j)] = distance
-                self.distance_cache[(j, i)] = distance
-
-    @staticmethod
-    def _calculate_distance(point1, point2) -> float:
-        """Tính khoảng cách Haversine"""
-        if not point1 or not point2:
-            return 0.0
-
-        # Handle both tuple and dict format
-        if isinstance(point1, dict):
-            lat1, lon1 = point1.get('lat', 0), point1.get('lon', 0)
-        elif isinstance(point1, (list, tuple)) and len(point1) >= 2:
-            lat1, lon1 = point1[0], point1[1]
-        else:
-            return 0.0
-            
-        if isinstance(point2, dict):
-            lat2, lon2 = point2.get('lat', 0), point2.get('lon', 0)
-        elif isinstance(point2, (list, tuple)) and len(point2) >= 2:
-            lat2, lon2 = point2[0], point2[1]
-        else:
-            return 0.0
-
-        R = 6371.0
-        lat1_rad = math.radians(lat1)
-        lat2_rad = math.radians(lat2)
-        dlat = math.radians(lat2 - lat1)
-        dlon = math.radians(lon2 - lon1)
-
-        a = math.sin(dlat / 2) ** 2 + math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(dlon / 2) ** 2
-        c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
-
-        return R * c
-
-    def _get_cached_distance(self, idx1: int, idx2: int) -> float:
-        """Lấy khoảng cách từ cache"""
-        if idx1 == idx2:
-            return 0.0
-        return self.distance_cache.get((idx1, idx2), 0.0)
 
     def _create_random_individual(self) -> Individual:
         """Tạo cá thể ngẫu nhiên"""
@@ -182,10 +134,11 @@ class GeneticAlgorithmScheduler:
         Tính fitness - cao hơn = tốt hơn
         
         Tiêu chí:
-        1. Tổng khoảng cách nhỏ
-        2. Cân bằng số đơn giữa schedules
-        3. Gom đơn cùng area
-        4. Ưu tiên đơn priority cao
+        1. Cân bằng số đơn giữa schedules
+        2. Gom đơn cùng area_code
+        3. Ưu tiên đơn priority cao
+        
+        KHÔNG tính khoảng cách
         """
         if not individual.chromosome:
             individual.fitness = 0.0
@@ -198,14 +151,7 @@ class GeneticAlgorithmScheduler:
                 schedule_orders[schedule_idx] = []
             schedule_orders[schedule_idx].append(order_idx)
 
-        # 1. Tính tổng khoảng cách
-        total_distance = 0.0
-        for orders in schedule_orders.values():
-            if len(orders) > 1:
-                for i in range(len(orders) - 1):
-                    total_distance += self._get_cached_distance(orders[i], orders[i + 1])
-
-        # 2. Tính độ cân bằng
+        # 1. Tính độ cân bằng (số đơn giữa các schedules)
         orders_counts = [len(orders) for orders in schedule_orders.values()]
         if orders_counts:
             mean_orders = sum(orders_counts) / len(orders_counts)
@@ -214,7 +160,7 @@ class GeneticAlgorithmScheduler:
         else:
             balance_score = 0.0
 
-        # 3. Tính điểm gom area (đơn cùng area trong cùng schedule)
+        # 2. Tính điểm gom area (đơn cùng area trong cùng schedule)
         area_score = 0.0
         for orders in schedule_orders.values():
             if len(orders) > 1:
@@ -225,37 +171,24 @@ class GeneticAlgorithmScheduler:
                         if areas[i] == areas[j]:
                             area_score += 1
 
-        # 4. Tính điểm priority
+        # 3. Tính điểm priority
         total_priority = sum(
             self.orders[order_idx].get('priority_score', 0)
             for _, order_idx in individual.chromosome
         )
 
-        # 5. Penalty cho vượt khoảng cách
-        distance_penalty = 0.0
-        for orders in schedule_orders.values():
-            route_distance = sum(
-                self._get_cached_distance(orders[i], orders[i + 1])
-                for i in range(len(orders) - 1)
-            ) if len(orders) > 1 else 0
-            
-            if route_distance > self.max_distance_km:
-                distance_penalty += (route_distance - self.max_distance_km) * 10
-
-        # Công thức fitness
+        # Công thức fitness (KHÔNG có distance)
         fitness = (
             len(individual.chromosome) * 5 +  # Bonus xếp được nhiều đơn
             total_priority * 2 +
             balance_score * 50 +
-            area_score * 3 -
-            total_distance * 2 -
-            distance_penalty
+            area_score * 3
         )
 
         individual.fitness = fitness
-        individual.total_distance = total_distance
         individual.balance_score = balance_score
         individual.priority_score = total_priority
+        individual.area_score = area_score
 
         return fitness
 

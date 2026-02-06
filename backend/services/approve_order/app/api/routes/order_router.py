@@ -1,46 +1,12 @@
 from fastapi import APIRouter, HTTPException, Depends, Query
-from datetime import datetime
 from typing import Optional, Dict, List
-from pydantic import BaseModel
-from backend.services.approve_order.app.application.services.order_service import OrderProcessingService
+from application.services.order_service import OrderProcessingService
 from infrastructure.database import Database
 from infrastructure.repositories.order_repository import OrderRepository
 from infrastructure.repositories.schedule_repository import ScheduleRepository
 from infrastructure.repositories.schedule_item_repository import ScheduleItemRepository
-
+from application.dto.schedule_item_dto import GetOrdersByAreaRequest,GetOrdersRequest
 router = APIRouter(prefix="/api/orders", tags=["Order Management"])
-
-
-# ============================================================================
-# REQUEST MODELS
-# ============================================================================
-
-class GetOrdersRequest(BaseModel):
-    """Request để lấy danh sách đơn hàng"""
-    post_office_id: str
-    status: Optional[str] = "pending"
-
-
-class GetOrdersByAreaRequest(BaseModel):
-    """Request để lấy đơn hàng theo vùng"""
-    post_office_id: str
-    area_code: str
-    status: Optional[str] = "pending"
-
-
-class AssignDriverRequest(BaseModel):
-    """Request để gán tài xế"""
-    driver_id: str
-
-
-class UpdateStatusRequest(BaseModel):
-    """Request để cập nhật status"""
-    status: str
-
-
-# ============================================================================
-# DEPENDENCY INJECTION
-# ============================================================================
 
 def get_order_processing_service() -> OrderProcessingService:
     """Tạo OrderProcessingService với dependencies"""
@@ -54,10 +20,6 @@ def get_order_processing_service() -> OrderProcessingService:
         schedule_item_repo=schedule_item_repo
     )
 
-
-# ============================================================================
-# ORDER ENDPOINTS - Xem đơn hàng
-# ============================================================================
 
 @router.post("/list-with-priority")
 async def get_orders_with_priority(
@@ -163,11 +125,6 @@ async def get_orders_by_area(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Lỗi: {str(e)}")
 
-
-# ============================================================================
-# SCHEDULE ENDPOINTS - Quản lý lịch trình
-# ============================================================================
-
 @router.get("/schedules")
 async def list_schedules(
     post_office_id: Optional[str] = Query(None),
@@ -256,14 +213,10 @@ async def get_schedule_items(
         raise HTTPException(status_code=500, detail=f"Lỗi: {str(e)}")
 
 
-# ============================================================================
-# SCHEDULE ACTIONS - Gán tài xế & cập nhật status
-# ============================================================================
-
 @router.patch("/schedules/{schedule_id}/assign-driver")
 async def assign_driver(
     schedule_id: str,
-    body: AssignDriverRequest,
+    driver_id: str,
     service: OrderProcessingService = Depends(get_order_processing_service)
 ):
     """Gán tài xế cho schedule (thủ công)"""
@@ -272,7 +225,7 @@ async def assign_driver(
             service.schedule_repo.db
             .schema(service.schedule_repo.schema)
             .table("schedules")
-            .update({"driver_id": body.driver_id})
+            .update({"driver_id": driver_id})
             .eq("id", schedule_id)
             .execute()
         )
@@ -282,7 +235,7 @@ async def assign_driver(
         
         return {
             "success": True,
-            "message": f"Đã gán tài xế {body.driver_id} cho schedule {schedule_id}",
+            "message": f"Đã gán tài xế {driver_id} cho schedule {schedule_id}",
             "data": response.data[0]
         }
         
@@ -295,13 +248,13 @@ async def assign_driver(
 @router.patch("/schedules/{schedule_id}/status")
 async def update_schedule_status(
     schedule_id: str,
-    body: UpdateStatusRequest,
+    status: str,
     service: OrderProcessingService = Depends(get_order_processing_service)
 ):
     """Cập nhật trạng thái schedule"""
     valid_statuses = ['draft', 'confirmed', 'in_progress', 'completed', 'cancelled']
     
-    if body.status not in valid_statuses:
+    if status not in valid_statuses:
         raise HTTPException(
             status_code=400, 
             detail=f"Status không hợp lệ. Phải là một trong: {valid_statuses}"
@@ -312,7 +265,7 @@ async def update_schedule_status(
             service.schedule_repo.db
             .schema(service.schedule_repo.schema)
             .table("schedules")
-            .update({"status": body.status})
+            .update({"status": status})
             .eq("id", schedule_id)
             .execute()
         )
@@ -322,7 +275,7 @@ async def update_schedule_status(
         
         return {
             "success": True,
-            "message": f"Đã cập nhật status thành '{body.status}'",
+            "message": f"Đã cập nhật status thành '{status}'",
             "data": response.data[0]
         }
         
@@ -331,6 +284,35 @@ async def update_schedule_status(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Lỗi: {str(e)}")
 
+
+@router.patch("/schedules/{schedule_id}/cancel")
+async def cancel_schedule_status(
+    schedule_id: str,
+    service: OrderProcessingService = Depends(get_order_processing_service)
+):
+    try:
+        response = (
+            service.schedule_repo.db
+            .schema(service.schedule_repo.schema)
+            .table("schedules")
+            .update({"status": "cancelled"})
+            .eq("id", schedule_id)
+            .execute()
+        )
+        
+        if not response.data or len(response.data) == 0:
+            raise HTTPException(status_code=404, detail="Không tìm thấy schedule")
+        
+        return {
+            "success": True,
+            "message": f"Đã cập nhật status thành cancelled",
+            "data": response.data[0]
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Lỗi: {str(e)}")
 
 # ============================================================================
 # HELPER FUNCTIONS

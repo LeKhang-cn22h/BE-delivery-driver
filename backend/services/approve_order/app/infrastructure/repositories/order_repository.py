@@ -12,17 +12,16 @@ class OrderRepository:
         self.db = supabase_client
         self.schema = schema
 
-    async def get_pending_orders_by_post_office(
+    async def get_confirmed_orders_by_post_office(
             self,
             post_office_id: str
     ) -> List[OrderDetail]:
         """
-        Lấy tất cả order_details có status='pending' của một bưu cục
+        Lấy tất cả order_details có status='confirm' của một bưu cục
         Sắp xếp theo priority_score giảm dần
-
         Logic:
         - orders (1) -> order_details (nhiều)
-        - Filter: orders.post_office_id = ? AND order_details.status = 'pending'
+        - Filter: orders.post_office_id = ? AND order_details.status = 'confirmed'
         """
         try:
             response = (
@@ -43,7 +42,7 @@ class OrderRepository:
                         post_office_id
                     )
                 """)
-                .eq("status", "pending")
+                .eq("status", "confirmed")
                 .eq("orders.post_office_id", post_office_id)
                 .order("priority_score", desc=True)
                 .execute()
@@ -199,16 +198,16 @@ class OrderRepository:
 
     async def update_order_details_status(
             self,
-            order_detail_ids: List[str],
+            order_id: str,
             status: str
     ) -> List[OrderDetail]:
-        """Cập nhật status cho nhiều order_details"""
+        """Cập nhật status cho tất cả order_details"""
         try:
             response = (
                 self.db.schema(self.schema)
                 .table("order_details")
                 .update({"status": status})
-                .in_("id", order_detail_ids)
+                .eq("order_id", order_id)
                 .execute()
             )
 
@@ -237,18 +236,18 @@ class OrderRepository:
         except Exception as e:
             raise Exception(f"Lỗi khi lấy order detail: {str(e)}")
 
-    async def get_pending_order_details_by_area(
-            self,
-            post_office_id: str,
-            area_code: str
-    ) -> List[OrderDetail]:
-        """
-        Lấy order_details pending của một vùng cụ thể
-        (Alias cho get_orders_by_area với status='pending')
-        """
-        return await self.get_orders_by_area(
-            post_office_id=post_office_id,
-            area_code=area_code,
-            status="pending"
-        )
+    # async def get_pending_order_details_by_area(
+    #         self,
+    #         post_office_id: str,
+    #         area_code: str
+    # ) -> List[OrderDetail]:
+    #     """
+    #     Lấy order_details pending của một vùng cụ thể
+    #     (Alias cho get_orders_by_area với status='pending')
+    #     """
+    #     return await self.get_orders_by_area(
+    #         post_office_id=post_office_id,
+    #         area_code=area_code,
+    #         status="pending"
+    #     )
 
