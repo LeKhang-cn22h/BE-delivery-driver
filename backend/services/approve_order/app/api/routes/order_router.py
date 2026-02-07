@@ -1,11 +1,11 @@
-from fastapi import APIRouter, HTTPException, Depends, Query
+from fastapi import APIRouter, HTTPException, Depends, Query,Request
 from typing import Optional, Dict, List
 from application.services.order_service import OrderProcessingService
 from infrastructure.database import Database
 from infrastructure.repositories.order_repository import OrderRepository
 from infrastructure.repositories.schedule_repository import ScheduleRepository
 from infrastructure.repositories.schedule_item_repository import ScheduleItemRepository
-from application.dto.schedule_item_dto import GetOrdersByAreaRequest,GetOrdersRequest
+from application.dto.schedule_item_dto import GetOrdersByAreaRequest,GetOrdersRequest,UpdateScheduleStatusRequest
 router = APIRouter(prefix="/api/orders", tags=["Order Management"])
 
 def get_order_processing_service() -> OrderProcessingService:
@@ -213,55 +213,52 @@ async def get_schedule_items(
         raise HTTPException(status_code=500, detail=f"Lỗi: {str(e)}")
 
 
+
 @router.patch("/schedules/{schedule_id}/assign-driver")
 async def assign_driver(
     schedule_id: str,
-    driver_id: str,
+    request: Request,
     service: OrderProcessingService = Depends(get_order_processing_service)
 ):
-    """Gán tài xế cho schedule (thủ công)"""
-    try:
-        response = (
-            service.schedule_repo.db
-            .schema(service.schedule_repo.schema)
-            .table("schedules")
-            .update({"driver_id": driver_id})
-            .eq("id", schedule_id)
-            .execute()
-        )
-        
-        if not response.data or len(response.data) == 0:
-            raise HTTPException(status_code=404, detail="Không tìm thấy schedule")
-        
-        return {
-            "success": True,
-            "message": f"Đã gán tài xế {driver_id} cho schedule {schedule_id}",
-            "data": response.data[0]
-        }
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Lỗi: {str(e)}")
+    body = await request.json()
+    driver_id = body.get("driver_id")
+
+    if not driver_id:
+        raise HTTPException(400, "driver_id is required")
+
+    response = (
+        service.schedule_repo.db
+        .schema(service.schedule_repo.schema)
+        .table("schedules")
+        .update({"driver_id": driver_id})
+        .eq("id", schedule_id)
+        .execute()
+    )
+
+    return {
+        "success": True,
+        "data": response.data[0]
+    }
 
 
 @router.patch("/schedules/{schedule_id}/status")
 async def update_schedule_status(
     schedule_id: str,
-    status: str,
+    body: UpdateScheduleStatusRequest,
     service: OrderProcessingService = Depends(get_order_processing_service)
 ):
-    """Cập nhật trạng thái schedule"""
-    valid_statuses = ['draft', 'confirmed', 'in_progress', 'completed', 'cancelled']
-    
-    if status not in valid_statuses:
+    status = body.status
+
+    valid_schedule_statuses = ['draft', 'confirmed', 'in_progress', 'completed', 'cancelled']
+    if status not in valid_schedule_statuses:
         raise HTTPException(
-            status_code=400, 
-            detail=f"Status không hợp lệ. Phải là một trong: {valid_statuses}"
+            status_code=400,
+            detail=f"Status không hợp lệ: {status}"
         )
-    
+
     try:
-        response = (
+        # ✅ 1. Update SCHEDULE
+        schedule_res = (
             service.schedule_repo.db
             .schema(service.schedule_repo.schema)
             .table("schedules")
@@ -269,20 +266,20 @@ async def update_schedule_status(
             .eq("id", schedule_id)
             .execute()
         )
-        
-        if not response.data or len(response.data) == 0:
-            raise HTTPException(status_code=404, detail="Không tìm thấy schedule")
-        
+
+        if not schedule_res.data:
+            raise HTTPException(404, "Không tìm thấy schedule")
+
         return {
             "success": True,
-            "message": f"Đã cập nhật status thành '{status}'",
-            "data": response.data[0]
+            "message": f"Đã cập nhật schedule thành {status}",
+            "data": schedule_res.data[0]
         }
-        
+
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Lỗi: {str(e)}")
+        raise HTTPException(500, f"Lỗi: {str(e)}")
 
 
 @router.patch("/schedules/{schedule_id}/cancel")

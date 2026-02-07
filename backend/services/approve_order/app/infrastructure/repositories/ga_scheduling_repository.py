@@ -36,7 +36,7 @@ class GASchedulingRepository:
                 self._get_table("order_details")
                 .select("id, order_id, start_point, address_detail, area_code, location, priority_score, status")
                 .in_("area_code", area_codes)
-                .eq("status", "confirmed")
+                .eq("status", "pending")
                 .execute()
             ).data
 
@@ -64,7 +64,7 @@ class GASchedulingRepository:
                     continue
 
                 # Check order status
-                if order["status"] not in ["processing"]:
+                if order["status"] not in ["confirmed"]:
                     continue
 
                 # Check chưa có schedule active
@@ -101,7 +101,22 @@ class GASchedulingRepository:
             return result
 
         return await loop.run_in_executor(None, _query)
+    async def get_available_drivers_count(self, post_office_id: UUID) -> int:
+        """Đếm số tài xế available của bưu cục"""
+        loop = asyncio.get_event_loop()
 
+        def _query():
+            response = (
+                self._get_table("drivers")
+                .select("id", count="exact")
+                .eq("post_office_id", str(post_office_id))
+                .eq("status", "available")
+                .execute()
+            )
+            return response.count or 0
+
+        return await loop.run_in_executor(None, _query)
+    
     async def create_schedule(
         self,
         scheduled_date: date,

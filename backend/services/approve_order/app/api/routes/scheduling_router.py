@@ -1,9 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from typing import List
-from uuid import UUID
-from datetime import date
 
-from application.dto.scheduling_dto import SchedulingRequest, SchedulingResponse
+from application.dto.scheduling_dto import SchedulingRequest, SchedulingResponse, SchedulingQuickRequest
 from application.services.ga_scheduling_service import GASchedulingService
 from infrastructure.database import Database
 
@@ -48,9 +46,7 @@ async def create_schedule_with_ga(
 
 @router.post("/create-quick", response_model=SchedulingResponse)
 async def create_schedule_quick(
-    scheduled_date: date,
-    area_codes: List[str],
-    post_office_id: UUID,
+    requestfe:SchedulingQuickRequest,
     service: GASchedulingService = Depends(get_scheduling_service)
 ):
     """
@@ -62,9 +58,9 @@ async def create_schedule_quick(
     """
     try:
         request = SchedulingRequest(
-            scheduled_date=scheduled_date,
-            area_codes=area_codes,
-            post_office_id=post_office_id
+            scheduled_date=requestfe.scheduled_date,
+            area_codes=requestfe.area_codes,
+            post_office_id=requestfe.post_office_id
         )
         
         result = await service.create_schedules(request)

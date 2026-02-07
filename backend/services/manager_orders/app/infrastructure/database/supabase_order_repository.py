@@ -42,11 +42,15 @@ class SupabaseOrderRepository(OrderRepository):
             "status": order.status.value if isinstance(order.status, OrderStatus) else order.status,
             "pickup_status": order.pickup_status.value if isinstance(order.pickup_status,
                                                                      PickupStatus) else order.pickup_status,
-            # ← Thêm .value
             "order_type": order.order_type.value if isinstance(order.order_type, OrderType) else order.order_type
         }
 
     def _from_dict(self, data: dict) -> Order:
+        details_data = data.get("order_details", [])
+        if isinstance(details_data, list) and len(details_data) > 0:
+            total_packages = details_data[0].get("count", 0)
+        else:
+            total_packages = 0
         return Order(
             id=data.get("id"),
             user_id=data.get("user_id"),
@@ -58,13 +62,60 @@ class SupabaseOrderRepository(OrderRepository):
             pickup_phone=data.get("pickup_phone"),
             pickup_note=data.get("pickup_note"),
             status=OrderStatus(data.get("status")),
-            pickup_status=PickupStatus(data.get("pickup_status")),
+            pickup_status=PickupStatus(data.get("pickup_status")) if data.get("pickup_status") else None,
             order_type=OrderType(data.get("order_type")),
             created_at=datetime.fromisoformat(data.get("created_at").replace('Z', '+00:00'))
             if data.get("created_at") else None,
-            order_details=[]
+            order_details=[],
+            _total_packages=total_packages
         )
 
+    # =========================================================================
+    # DYNAMIC QUERY - thay thế tất cả các method get_by_xxx riêng lẻ
+    # =========================================================================
+    async def query_orders(
+        self,
+        post_office_id: Optional[str] = None,
+        user_id: Optional[str] = None,
+        status: Optional[str] = None,
+        pickup_status: Optional[str] = None,
+        order_type: Optional[str] = None,
+        pickup_area_code: Optional[str] = None,
+        skip: int = 0,
+        limit: int = 10,
+    ) -> List[Order]:
+        """
+        Dynamic query - 1 method xử lý tất cả tổ hợp filter.
+        Chỉ apply filter khi param không None.
+        """
+        query = self._table().select("*, order_details(count)")
+
+        # Apply filters dynamically
+        filters = {
+            "post_office_id": post_office_id,
+            "user_id": user_id,
+            "status": status,
+            "pickup_status": pickup_status,
+            "order_type": order_type,
+            "pickup_area_code": pickup_area_code,
+        }
+
+        for column, value in filters.items():
+            if value is not None:
+                query = query.eq(column, value)
+
+        response = (
+            query
+            .order("created_at", desc=True)
+            .range(skip, skip + limit - 1)
+            .execute()
+        )
+
+        return [self._from_dict(item) for item in response.data]
+
+    # =========================================================================
+    # Giữ lại các method CRUD cơ bản
+    # =========================================================================
     async def create(self, order: Order) -> Order:
         data = self._to_dict(order)
         response = self._table().insert(data).execute()
@@ -75,99 +126,17 @@ class SupabaseOrderRepository(OrderRepository):
         return self._from_dict(response.data[0])
 
     async def get_by_id(self, order_id: str) -> Optional[Order]:
-        """Lấy đơn hàng theo ID"""
-        print(f"🔍 [SupabaseOrderRepository] get_by_id called with: {order_id}")
-        print(f"🔍 [SupabaseOrderRepository] Schema: {self.schema}, Table: {self.table_name}")
-        
-        try:
-            response = (
-                self._table()
-                .select("*")
-                .eq("id", order_id)
-                .execute()
-            )
-            
-            print(f"📊 [SupabaseOrderRepository] Response data: {response.data}")
-            print(f"📊 [SupabaseOrderRepository] Found {len(response.data) if response.data else 0} rows")
-            
-            if not response.data:
-                print(f"❌ [SupabaseOrderRepository] No data found for order_id: {order_id}")
-                return None
-            
-            order = self._from_dict(response.data[0])
-            print(f"✅ [SupabaseOrderRepository] Successfully mapped order: {order.id}")
-            return order
-            
-        except Exception as e:
-            print(f"❌ [SupabaseOrderRepository] Error in get_by_id: {str(e)}")
-            import traceback
-            traceback.print_exc()
-            raise
-    
-    async def get_by_post(self, post_id: str, skip: int = 0, limit: int = 10) -> List[Order]:
         response = (
             self._table()
             .select("*")
-            .eq("post_office_id", post_id)
-            .order("created_at", desc=True)
-            .range(skip, skip + limit - 1)
+            .eq("id", order_id)
             .execute()
         )
 
-        return [self._from_dict(item) for item in response.data]
-    
-    async def get_by_status(self, post_id: str, status:str, skip: int = 0, limit: int = 10) -> List[Order]:
-        response = (
-            self._table()
-            .select("*")
-            .eq("post_office_id", post_id )
-            .eq("status", status)
-            .order("created_at", desc=True)
-            .range(skip, skip + limit - 1)
-            .execute()
-        )
+        if not response.data:
+            return None
 
-        return [self._from_dict(item) for item in response.data]
-
-
-    async def get_by_pickupstatus(self, post_id: str, pickupstatus:str, skip: int = 0, limit: int = 10) -> List[Order]:
-        response = (
-            self._table()
-            .select("*")
-            .eq("post_office_id", post_id )
-            .eq("pickup_status", pickupstatus)
-            .order("created_at", desc=True)
-            .range(skip, skip + limit - 1)
-            .execute()
-        )
-
-        return [self._from_dict(item) for item in response.data]
-    
-    async def get_by_statusPickupStatus(self, post_id: str, status:str,pickupStatus:str, skip: int = 0, limit: int = 10) -> List[Order]:
-        response = (
-            self._table()
-            .select("*")
-            .eq("post_office_id", post_id )
-            .eq("status", status)
-            .eq("pickup_status", pickupStatus)
-            .order("created_at", desc=True)
-            .range(skip, skip + limit - 1)
-            .execute()
-        )
-
-        return [self._from_dict(item) for item in response.data]
-    
-    async def get_by_user_id(self, user_id: str, skip: int = 0, limit: int = 10) -> List[Order]:
-        response = (
-            self._table()
-            .select("*")
-            .eq("user_id", user_id)
-            .order("created_at", desc=True)
-            .range(skip, skip + limit - 1)
-            .execute()
-        )
-
-        return [self._from_dict(item) for item in response.data]
+        return self._from_dict(response.data[0])
 
     async def update_status(self, order_id: str, status: str) -> bool:
         response = (
@@ -193,19 +162,34 @@ class SupabaseOrderRepository(OrderRepository):
             raise Exception("Không thể cập nhật đơn hàng")
 
         return self._from_dict(response.data[0])
-    
+
     async def get_by_postid(self, post_id: str, skip: int = 0, limit: int = 10) -> List[Order]:
-        """Wrapper - gọi get_by_post"""
-        return await self.get_by_post(post_id, skip, limit)
+        """Lấy danh sách đơn hàng của post office"""
+        return await self.query_orders(post_office_id=post_id, skip=skip, limit=limit)
 
     async def get_by_post_status(self, post_id: str, status: str, skip: int = 0, limit: int = 10) -> List[Order]:
-        """Wrapper - gọi get_by_status"""
-        return await self.get_by_status(post_id, status, skip, limit)
+        """Lấy danh sách đơn hàng của post office theo status"""
+        return await self.query_orders(post_office_id=post_id, status=status, skip=skip, limit=limit)
 
     async def get_by_pickupStatus(self, post_id: str, pickup_status: str, skip: int = 0, limit: int = 10) -> List[Order]:
-        """Wrapper - gọi get_by_pickupstatus"""
-        return await self.get_by_pickupstatus(post_id, pickup_status, skip, limit)
+        """Lấy danh sách đơn hàng theo post office và pickup_status"""
+        return await self.query_orders(post_office_id=post_id, pickup_status=pickup_status, skip=skip, limit=limit)
 
     async def get_by_pickupStatus_status(self, post_id: str, status: str, pickup_status: str, skip: int = 0, limit: int = 10) -> List[Order]:
-        """Wrapper - gọi get_by_statusPickupStatus"""
-        return await self.get_by_statusPickupStatus(post_id, status, pickup_status, skip, limit)
+        """Lấy danh sách đơn hàng theo post office, status và pickup_status"""
+        return await self.query_orders(
+            post_office_id=post_id, 
+            status=status, 
+            pickup_status=pickup_status, 
+            skip=skip, 
+            limit=limit
+        )
+
+    # =========================================================================
+    # Backward-compatible wrappers (có thể xóa dần)
+    # =========================================================================
+    async def get_by_post(self, post_id: str, skip: int = 0, limit: int = 10) -> List[Order]:
+        return await self.query_orders(post_office_id=post_id, skip=skip, limit=limit)
+
+    async def get_by_user_id(self, user_id: str, skip: int = 0, limit: int = 10) -> List[Order]:
+        return await self.query_orders(user_id=user_id, skip=skip, limit=limit)

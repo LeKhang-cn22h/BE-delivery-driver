@@ -7,7 +7,7 @@ KHÔNG tính khoảng cách (có API riêng để tối ưu route)
 import random
 import math
 import time
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple,Optional
 from dataclasses import dataclass
 
 
@@ -40,6 +40,7 @@ class GeneticAlgorithmScheduler:
         self,
         orders: List[dict],
         max_orders_per_schedule: int = 15,
+        max_schedules: Optional[int] = None,
         max_distance_km: float = 40.0,  
         population_size: int = 50,
         generations: int = 100,
@@ -56,9 +57,10 @@ class GeneticAlgorithmScheduler:
         self.mutation_rate = mutation_rate
         self.crossover_rate = crossover_rate
         self.elite_size = elite_size
+        estimated = max(1, (self.num_orders + max_orders_per_schedule - 1) // max_orders_per_schedule)
 
-        # Tính số schedule cần thiết (ước lượng)
-        self.num_schedules = max(1, (self.num_orders + max_orders_per_schedule - 1) // max_orders_per_schedule)
+        # Tính số schedule cần thiết
+        self.num_schedules = min(max_schedules, estimated) if max_schedules else estimated
 
     def _create_random_individual(self) -> Individual:
         """Tạo cá thể ngẫu nhiên"""
@@ -76,10 +78,8 @@ class GeneticAlgorithmScheduler:
             ]
 
             if not available:
-                # Tạo thêm schedule mới
-                self.num_schedules += 1
-                orders_per_schedule.append(0)
-                available = [self.num_schedules - 1]
+                continue
+
 
             schedule_idx = random.choice(available)
             chromosome.append((schedule_idx, order_idx))
@@ -118,9 +118,8 @@ class GeneticAlgorithmScheduler:
                     schedule_idx += 1
 
                 if schedule_idx >= len(orders_per_schedule):
-                    # Tạo schedule mới
-                    self.num_schedules += 1
-                    orders_per_schedule.append(0)
+                    break
+
 
                 chromosome.append((schedule_idx, order_idx))
                 orders_per_schedule[schedule_idx] += 1

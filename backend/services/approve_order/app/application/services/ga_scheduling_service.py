@@ -49,6 +49,15 @@ class GASchedulingService:
                 total_orders_processed=0,
                 total_schedules_created=0
             )
+        max_schedules = request.max_schedules
+        if max_schedules is None:
+            driver_count = await self.repository.get_available_drivers_count(
+                request.post_office_id
+            )
+            if driver_count > 0:
+                max_schedules = driver_count
+            else:
+                max_schedules = max(1, len(orders_data) // request.max_orders_per_schedule)
 
         # 2. Chuẩn bị config cho GA
         ga_config = GAConfig(
@@ -67,7 +76,8 @@ class GASchedulingService:
             None,
             self._run_ga_optimization,
             orders_data,
-            ga_config
+            ga_config,
+            max_schedules
         )
 
         # 4. Chuyển solution thành schedules
@@ -110,12 +120,14 @@ class GASchedulingService:
     def _run_ga_optimization(
         self,
         orders_data: List[dict],
-        ga_config: GAConfig
+        ga_config: GAConfig,
+        max_schedules: int
     ) -> Tuple[Individual, List[Dict]]:
         """Chạy GA optimization (synchronous)"""
         
         ga = GeneticAlgorithmScheduler(
             orders=orders_data,
+            max_schedules=max_schedules,
             max_orders_per_schedule=ga_config.max_orders_per_schedule,
             max_distance_km=ga_config.max_distance_km,
             population_size=ga_config.population_size,
@@ -191,12 +203,6 @@ class GASchedulingService:
             await self.repository.create_schedule_items(
                 schedule_id=schedule_id,
                 order_detail_ids=order_detail_ids
-            )
-
-            # Cập nhật status order_details
-            await self.repository.update_order_details_status(
-                order_detail_ids=order_detail_ids,
-                status='scheduled'
             )
 
             # Build response

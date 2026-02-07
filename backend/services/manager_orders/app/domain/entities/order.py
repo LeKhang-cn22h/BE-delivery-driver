@@ -93,6 +93,8 @@ class Order:
 
     # Danh sách kiện hàng trong đơn
     order_details: List[OrderDetail] = None
+    _total_packages: int = 0 
+
 
     def __post_init__(self):
         if self.order_details is None:
@@ -117,7 +119,9 @@ class Order:
             detail.validate()
 
     def get_total_packages(self) -> int:
-        """Tổng số kiện hàng"""
+        """Ưu tiên count từ DB, fallback về len(order_details)"""
+        if self._total_packages > 0:
+            return self._total_packages
         return len(self.order_details)
 
     def get_delivered_packages(self):

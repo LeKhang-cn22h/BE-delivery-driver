@@ -18,7 +18,7 @@ APPROVE_ORDER_SERVICE_URL = os.getenv(
     "APPROVE_ORDER_SERVICE_URL",
     "http://localhost:4000"
 )
-
+3
 order_client = HTTPClient(APPROVE_ORDER_SERVICE_URL)
 
 @router.get("/health", summary="Health check")

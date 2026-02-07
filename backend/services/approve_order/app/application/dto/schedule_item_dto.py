@@ -37,7 +37,8 @@ class ScheduleItemDetailResponse(ScheduleItemResponse):
     """Response chi tiết bao gồm thông tin order_detail"""
     order_detail: dict  # Thông tin từ order_details
 
-
+class UpdateScheduleStatusRequest(BaseModel):
+    status: str
 class ScheduleItemWithOrderInfo(BaseModel):
     """Schedule item kèm thông tin order đầy đủ"""
     id: str

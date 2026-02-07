@@ -17,6 +17,7 @@ class SchedulingRequest(BaseModel):
     
     # Schedule constraints
     max_orders_per_schedule: int = 15
+    max_schedules: Optional[int] = None
     max_distance_km: float = 40.0
     
     # GA parameters
@@ -25,6 +26,8 @@ class SchedulingRequest(BaseModel):
     mutation_rate: float = 0.1
     crossover_rate: float = 0.8
     elite_size: int = 5
+
+
 
 class ScheduleItemResponse(BaseModel):
     """Response cho một item trong schedule"""
@@ -92,7 +95,10 @@ class SchedulingResponse(BaseModel):
 # ============================================================================
 # LEGACY DTOs (for OrderProcessingService - sẽ deprecate)
 # ============================================================================
-
+class SchedulingQuickRequest(BaseModel):
+    scheduled_date: date
+    area_codes: List[str]
+    post_office_id: UUID
 class OrderProcessingResult(BaseModel):
     """DTO cho kết quả xử lý đơn hàng của một vùng"""
     schedule_id: str

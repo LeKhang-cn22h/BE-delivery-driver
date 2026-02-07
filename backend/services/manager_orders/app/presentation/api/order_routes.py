@@ -34,7 +34,6 @@ logger = logging.getLogger(__name__)
 # ============================================================================
 
 order_router = APIRouter(prefix="/api/v1/orders", tags=["orders"])
-
 # ============= SINGLETON EVENT PUBLISHER =============
 _event_publisher_instance = None
 
@@ -196,42 +195,42 @@ async def create_order(
 
 @order_router.get("/post-office/{post_office_id}/orders", response_model=List[OrderSummaryDTO])
 async def get_post_office_orders(
-        post_office_id: str,
-        status: Optional[str] = Query(None, pattern="^(pending|confirmed|processing|completed|cancelled)$"),
-        pickup_status: Optional[str] = Query(None, pattern="^(pending|scheduled|picked|failed)$"),
-        skip: int = Query(0, ge=0),
-        limit: int = Query(10, ge=1, le=100),
-        use_case: GetOrderUseCase = Depends(get_get_order_use_case)
+    post_office_id: str,
+    status: Optional[str] = Query(None, pattern="^(pending|confirmed|processing|completed|cancelled)$"),
+    pickup_status: Optional[str] = Query(None, pattern="^(pending|scheduled|picked|failed)$"),
+    order_type: Optional[str] = Query(None, pattern="^(drop_off|pickup)$"),
+    pickup_area_code: Optional[str] = Query(None, max_length=50),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(10, ge=1, le=100),
+    use_case: GetOrderUseCase = Depends(get_get_order_use_case),
 ):
     """
-    Lấy danh sách đơn hàng của bưu cục với các filter tùy chọn
-    
-    Hỗ trợ các query params:
-    - status: Lọc theo trạng thái đơn hàng
-    - pickup_status: Lọc theo trạng thái lấy hàng
-    - Có thể kết hợp cả 2
-    - Nếu không truyền filter nào -> lấy tất cả
-    
+    Lấy danh sách đơn hàng của bưu cục - hỗ trợ tất cả tổ hợp filter.
+
+    Query params (tất cả optional, kết hợp tùy ý):
+    - status: Trạng thái đơn (pending|confirmed|processing|completed|cancelled)
+    - pickup_status: Trạng thái lấy hàng (pending|scheduled|picked|failed)
+    - order_type: Loại đơn (drop_off|pickup)
+    - pickup_area_code: Mã khu vực lấy hàng
+    - skip, limit: Phân trang
+
     Examples:
-    GET /post-office/xxx/orders
-    GET /post-office/xxx/orders?status=pending
-    GET /post-office/xxx/orders?pickup_status=picked
-    GET /post-office/xxx/orders?status=confirmed&pickup_status=pending
+    GET /post-office/{id}/orders
+    GET /post-office/{id}/orders?order_type=pickup
+    GET /post-office/{id}/orders?order_type=drop_off&status=pending
+    GET /post-office/{id}/orders?pickup_area_code=HCMQ12
+    GET /post-office/{id}/orders?order_type=pickup&pickup_status=pending&pickup_area_code=TD
     """
     try:
-        # Xử lý logic dựa trên params
-        if status and pickup_status:
-            # Lọc theo cả 2
-            orders = await use_case.getbyStatusPickStatus(post_office_id, status, pickup_status)
-        elif status:
-            # Chỉ lọc theo status
-            orders = await use_case.getbyStatus(post_office_id, status)
-        elif pickup_status:
-            # Chỉ lọc theo pickup_status
-            orders = await use_case.getbyPickupStatus(post_office_id, pickup_status)
-        else:
-            # Không filter, lấy tất cả
-            orders = await use_case.getbyPost(post_office_id)
+        orders = await use_case.query_orders(
+            post_office_id=post_office_id,
+            status=status,
+            pickup_status=pickup_status,
+            order_type=order_type,
+            pickup_area_code=pickup_area_code,
+            skip=skip,
+            limit=limit,
+        )
 
         return [
             OrderSummaryDTO(
@@ -240,7 +239,9 @@ async def get_post_office_orders(
                 status=order.status,
                 created_at=order.created_at,
                 pickup_status=order.pickup_status,
-                total_packages=order.get_total_packages()
+                order_type=order.order_type,
+                pickup_area_code=order.pickup_area_code,
+                total_packages=order.get_total_packages(),
             )
             for order in orders
         ]

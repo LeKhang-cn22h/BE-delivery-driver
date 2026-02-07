@@ -49,7 +49,7 @@ class Order:
     """Order aggregate"""
     id: UUID
     user_id: UUID
-    pickup_point: str
+    pickup_point:Optional[str] = None
     status: str
     created_at: datetime
     order_type: str = "normal"

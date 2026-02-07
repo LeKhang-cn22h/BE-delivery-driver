@@ -154,10 +154,12 @@ class OrderResponseDTO(BaseModel):
 class OrderSummaryDTO(BaseModel):
     """Response tóm tắt đơn hàng (dùng cho list)"""
     id: str
-    pickup_point: str
+    pickup_point: Optional[str]
     status: OrderStatus
     created_at: datetime
-    pickup_status: PickupStatus
+    pickup_status: Optional[PickupStatus] = None    
+    order_type: Optional[str] = None                
+    pickup_area_code: Optional[str] = None           
     total_packages: int
 
     class Config:

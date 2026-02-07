@@ -62,8 +62,8 @@ async def create_order(request: Request):
 @router.get("/{order_id}", summary="Lấy chi tiết đơn hàng")
 async def get_order_detail(order_id: str, request: Request):
     headers = await get_user_headers(request)
-    logger.info(f"📥 Gateway received order_id: {order_id}")
-    logger.info(f"📏 Order ID length: {len(order_id)}")
+    logger.info(f" Gateway received order_id: {order_id}")
+    logger.info(f" Order ID length: {len(order_id)}")
 
     return await orders_client.request(
         "GET",
@@ -135,37 +135,39 @@ async def get_post_office_orders(
     request: Request,
     status: Optional[str] = Query(None, pattern="^(pending|confirmed|processing|completed|cancelled)$"),
     pickup_status: Optional[str] = Query(None, pattern="^(pending|scheduled|picked|failed)$"),
+    order_type: Optional[str] = Query(None, pattern="^(drop_off|pickup)$"),
+    pickup_area_code: Optional[str] = Query(None, max_length=50),
     skip: int = Query(0, ge=0),
     limit: int = Query(10, ge=1, le=100),
 ):
     """
-    Lấy đơn hàng của bưu cục với filter tùy chọn
-    
-    Query params:
-    - status: Lọc theo trạng thái đơn hàng (optional)
-    - pickup_status: Lọc theo trạng thái lấy hàng (optional)
-    - skip, limit: Phân trang
-    
+    Lấy đơn hàng của bưu cục - proxy tất cả filter params xuống order service.
+
     Examples:
-    - GET /post-office/{id}/orders -> Tất cả đơn
-    - GET /post-office/{id}/orders?status=pending -> Đơn pending
-    - GET /post-office/{id}/orders?pickup_status=picked -> Đơn đã lấy
-    - GET /post-office/{id}/orders?status=confirmed&pickup_status=pending -> Kết hợp
+    GET /post-office/{id}/orders
+    GET /post-office/{id}/orders?order_type=pickup
+    GET /post-office/{id}/orders?order_type=drop_off&status=confirmed
+    GET /post-office/{id}/orders?pickup_area_code=HCMQ12&order_type=pickup
     """
     headers = await get_user_headers(request)
-    
-    # Build params dynamically
+
+    # Build params dynamically - chỉ gửi những param có giá trị
     params = {"skip": skip, "limit": limit}
-    if status:
-        params["status"] = status
-    if pickup_status:
-        params["pickup_status"] = pickup_status
-    
+    optional_filters = {
+        "status": status,
+        "pickup_status": pickup_status,
+        "order_type": order_type,
+        "pickup_area_code": pickup_area_code,
+    }
+    for key, value in optional_filters.items():
+        if value is not None:
+            params[key] = value
+
     return await orders_client.request(
         "GET",
         f"/api/v1/orders/post-office/{post_office_id}/orders",
         params=params,
-        headers=headers
+        headers=headers,
     )
 
 # ================================
