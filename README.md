@@ -106,11 +106,10 @@ The system is built on a **Microservice Architecture** with event-driven communi
 
 ---
 
-##  Tech Stack
-
+## Tech Stack
 | Layer | Technology |
 |-------|-----------|
-| Language | Python  |
+| Language | Python |
 | Framework | FastAPI |
 | Database | Supabase (PostgreSQL) |
 | Message Broker | Apache Kafka, RabbitMQ |
@@ -119,14 +118,18 @@ The system is built on a **Microservice Architecture** with event-driven communi
 | Route Optimization | OSRM (Open Source Routing Machine) |
 | Scheduling Algorithm | Genetic Algorithm |
 | Data Mining | Association Rule Mining (Apriori) |
+| Data Lake / Object Storage | MinIO |
+| Business Intelligence | Metabase |
 | Containerization | Docker, Docker Compose |
 | Template Engine | Cookiecutter |
 
 <p>
   <img src="https://skillicons.dev/icons?i=python,fastapi,supabase,docker,firebase,kafka" />
 </p>
-
----
+<p>
+  <img src="https://img.shields.io/badge/MinIO-C72E49?style=for-the-badge&logo=minio&logoColor=white" />
+  <img src="https://img.shields.io/badge/Metabase-509EE3?style=for-the-badge&logo=metabase&logoColor=white" />
+</p>
 
 ##  Features
 
